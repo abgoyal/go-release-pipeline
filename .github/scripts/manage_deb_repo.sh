@@ -30,20 +30,17 @@ fi
 
 # --- CLEANUP OLD PACKAGES ---
 echo "[CLEANUP] Cleaning up old packages from Aptly repository..."
-all_packages=$(aptly -config="$APTLY_CONFIG" repo show -with-packages "$REPO_NAME" 2>/dev/null || echo "")
+all_packages=$(aptly -config="$APTLY_CONFIG" repo show -with-packages "$REPO_NAME" 2>/dev/null | sed -n '/^Packages:/,$p' | sed '1d; s/^[[:blank:]]*//' || echo "")
 if [ -n "$all_packages" ]; then
     current_major=$(echo "$NEW_VERSION" | cut -d. -f1)
     previous_major_num=$((${current_major#v} - 1))
     previous_major="v${previous_major_num}"
 
     echo "$all_packages"
-    echo "$all_packages" | grep -v "^Name: "
-    echo "$all_packages" | grep -v "^Name: " | grep "^  ${REPO_NAME}"
-    echo "$all_packages" | grep -v "^Name: " | grep "^  ${REPO_NAME}" | sed 's/.*_\([^_]*\).*/\1/'
-    echo "$all_packages" | grep -v "^Name: " | grep "^  ${REPO_NAME}" | sed 's/.*_\([^_]*\).*/\1/' | sort -rV
-    echo "$all_packages" | grep -v "^Name: " | grep "^  ${REPO_NAME}" | sed 's/.*_\([^_]*\).*/\1/' | sort -rV | uniq
+    type sort
+    type uniq
 
-    versions=$(echo "$all_packages" | grep -v "^Name: " | grep "^  ${REPO_NAME}" | sed 's/.*_\([^_]*\).*/\1/' | sort -rV | uniq)
+    versions=$(echo "$all_packages" | sort -rV | uniq)
 
     to_keep_current=$(echo "$versions" | grep "^${current_major#v}" | head -n $KEEP_CURRENT_MAJOR)
     to_keep_previous=$(echo "$versions" | grep "^${previous_major#v}" | head -n $KEEP_PREVIOUS_MAJOR)
