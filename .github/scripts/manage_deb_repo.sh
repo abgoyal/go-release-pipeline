@@ -22,6 +22,11 @@ cat > "$APTLY_CONFIG" <<EOF
 EOF
 trap 'rm -f -- "$APTLY_CONFIG"' EXIT
 
+# Check if repo exists, create if not
+if ! aptly -config="$APTLY_CONFIG" repo show "$REPO_NAME" > /dev/null 2>&1; then
+    aptly -config="$APTLY_CONFIG" repo create -distribution="$DISTRIBUTION" -component="$COMPONENT" "$REPO_NAME"
+fi
+
 # --- CLEANUP OLD PACKAGES ---
 echo "[CLEANUP] Cleaning up old packages from Aptly repository..."
 all_packages=$(aptly -config="$APTLY_CONFIG" repo show -with-packages "$REPO_NAME" 2>/dev/null || echo "")
