@@ -236,7 +236,7 @@ jobs:
           all_tags=$(gh release list --json tagName -q '.[].tagName' | sort -rV)
           current_major_ver=$(echo "$CURRENT_TAG" | cut -d. -f1)
           previous_major_ver="v$((${current_major_ver#v} - 1))"
-          tags_to_keep=$((echo "$all_tags" | grep "^$current_major_ver" | head -n $KEEP_CURRENT_MAJOR; echo "$all_tags" | grep "^$previous_major_ver" | head -n $KEEP_PREVIOUS_MAJOR;) | sort | uniq)
+          tags_to_keep=$( (echo "$all_tags" | grep "^$current_major_ver" | head -n $KEEP_CURRENT_MAJOR; echo "$all_tags" | grep "^$previous_major_ver" | head -n $KEEP_PREVIOUS_MAJOR;) | sort | uniq )
           tags_to_delete=$(comm -23 <(echo "$all_tags" | sort) <(echo "$tags_to_keep" | sort))
           echo "[INFO] Tags to keep:" && echo "$tags_to_keep" && echo "---"
           echo "[INFO] Tags to delete:" && echo "$tags_to_delete"
