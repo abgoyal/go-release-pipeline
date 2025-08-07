@@ -32,8 +32,6 @@ on:
         required: false
         default: false
     secrets:
-      GITHUB_TOKEN:
-        required: true
       DEB_GPG_PRIVATE_KEY:
         required: false
       DEB_GPG_PASSPHRASE:
