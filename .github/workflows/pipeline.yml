@@ -154,8 +154,15 @@ jobs:
         with:
           path: /var/cache/apt/archives
           key: ${{ runner.os }}-apt-cache-v1
+      - name: Configure apt for non-interactive and speed
+        run: |
+          sudo rm -f /var/lib/man-db/auto-update
+          echo "Acquire::http::Timeout \"30\";" | sudo tee /etc/apt/apt.conf.d/99timeout
+          echo "Acquire::ftp::Timeout \"30\";" | sudo tee -a /etc/apt/apt.conf.d/99timeout
+          echo "Acquire::Retries \"3\";" | sudo tee -a /etc/apt/apt.conf.d/99retries
+          export DEBIAN_FRONTEND=noninteractive
       - name: Install Dependencies
-        run: sudo apt-get update && sudo apt-get install -y aptly createrepo-c
+        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends aptly createrepo-c
       - name: Download Artifacts
         uses: actions/download-artifact@v4
         with:
