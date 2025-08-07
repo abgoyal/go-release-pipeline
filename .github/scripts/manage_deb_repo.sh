@@ -22,6 +22,7 @@ cat > "$APTLY_CONFIG" <<EOF
 EOF
 trap 'rm -f -- "$APTLY_CONFIG"' EXIT
 
+set -x
 # Check if repo exists, create if not
 if ! aptly -config="$APTLY_CONFIG" repo show "$REPO_NAME" > /dev/null 2>&1; then
     aptly -config="$APTLY_CONFIG" repo create -distribution="$DISTRIBUTION" -component="$COMPONENT" "$REPO_NAME"
