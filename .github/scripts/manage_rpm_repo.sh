@@ -1,6 +1,7 @@
 #!/bin/bash
 set -eou pipefail
 
+set -x
 echo "--- Managing RPM (YUM/DNF) Repository ---"
 
 # --- CONFIGURATION ---
