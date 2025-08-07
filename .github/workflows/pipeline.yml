@@ -125,6 +125,11 @@ jobs:
           APK_GPG_PASSPHRASE: ${{ secrets.APK_GPG_PASSPHRASE }}
           DEB_POSTINSTALL_PATH: ${{ inputs.deb-postinstall-path }}
           RPM_POSTINSTALL_PATH: ${{ inputs.rpm-postinstall-path }}
+      - name: Upload GoReleaser Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: goreleaser-artifacts
+          path: dist/
 
   update-repo:
     runs-on: ubuntu-latest
