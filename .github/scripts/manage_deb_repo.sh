@@ -36,6 +36,13 @@ if [ -n "$all_packages" ]; then
     previous_major_num=$((${current_major#v} - 1))
     previous_major="v${previous_major_num}"
 
+    echo "$all_packages"
+    echo "$all_packages" | grep -v "^Name: "
+    echo "$all_packages" | grep -v "^Name: " | grep "^  ${REPO_NAME}"
+    echo "$all_packages" | grep -v "^Name: " | grep "^  ${REPO_NAME}" | sed 's/.*_\([^_]*\).*/\1/'
+    echo "$all_packages" | grep -v "^Name: " | grep "^  ${REPO_NAME}" | sed 's/.*_\([^_]*\).*/\1/' | sort -rV
+    echo "$all_packages" | grep -v "^Name: " | grep "^  ${REPO_NAME}" | sed 's/.*_\([^_]*\).*/\1/' | sort -rV | uniq
+
     versions=$(echo "$all_packages" | grep -v "^Name: " | grep "^  ${REPO_NAME}" | sed 's/.*_\([^_]*\).*/\1/' | sort -rV | uniq)
 
     to_keep_current=$(echo "$versions" | grep "^${current_major#v}" | head -n $KEEP_CURRENT_MAJOR)
