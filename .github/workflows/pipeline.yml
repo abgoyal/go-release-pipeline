@@ -141,6 +141,8 @@ jobs:
     steps:
       - name: Checkout Pipeline Repo for Scripts
         uses: actions/checkout@v4
+        with:
+          repository: abgoyal/go-release-pipeline
       - name: Checkout Calling Repo's gh-pages
         uses: actions/checkout@v4
         with:
