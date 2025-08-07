@@ -197,13 +197,16 @@ jobs:
       fail-fast: false
       matrix:
         package_info:
-          - { type: 'deb', distro: 'ubuntu', enabled: ${{ inputs.enable-deb }} }
-          - { type: 'rpm', distro: 'fedora', enabled: ${{ inputs.enable-rpm }} }
-          - { type: 'apk', distro: 'alpine', enabled: ${{ inputs.enable-apk }} }
+          - { type: 'deb', distro: 'ubuntu' }
+          - { type: 'rpm', distro: 'fedora' }
+          - { type: 'apk', distro: 'alpine' }
         arch: [amd64, arm64]
     steps:
       - name: Checkout Pipeline Repo for Test Action
-        if: matrix.package_info.enabled
+        if: >
+          (matrix.package_info.type == 'deb' && inputs.enable-deb) ||
+          (matrix.package_info.type == 'rpm' && inputs.enable-rpm) ||
+          (matrix.package_info.type == 'apk' && inputs.enable-apk)
         uses: actions/checkout@v4
       - name: Set up QEMU
         if: matrix.package_info.enabled
