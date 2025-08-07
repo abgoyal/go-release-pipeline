@@ -41,7 +41,7 @@ for arch in x86_64 aarch64; do
     fi
 
     # --- ADD NEW PACKAGES ---
-    RPM_FILES=$(find "$ARTIFACTS_DIR" -path "*/builds/*" -name "*${arch}*.rpm" || true)
+    RPM_FILES=$(find "$ARTIFACTS_DIR" -name "*${arch}*.rpm" || true)
     if [ -n "$RPM_FILES" ]; then
         echo "[ADD] Adding new packages for $arch..."
         cp $RPM_FILES "$ARCH_DIR/"

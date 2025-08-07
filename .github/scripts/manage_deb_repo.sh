@@ -54,7 +54,7 @@ fi
 
 # --- ADD NEW PACKAGES ---
 echo "[ADD] Adding new packages to Aptly repository..."
-DEB_FILES=$(find "$ARTIFACTS_DIR" -path "*/builds/*" -name "*.deb")
+DEB_FILES=$(find "$ARTIFACTS_DIR" -name "*.deb")
 if [ -z "$DEB_FILES" ]; then
     echo "[INFO] No .deb files found in artifacts. Skipping."
     exit 0
