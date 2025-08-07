@@ -22,7 +22,6 @@ cat > "$APTLY_CONFIG" <<EOF
 EOF
 trap 'rm -f -- "$APTLY_CONFIG"' EXIT
 
-set -x
 # Check if repo exists, create if not
 if ! aptly -config="$APTLY_CONFIG" repo show "$REPO_NAME" > /dev/null 2>&1; then
     aptly -config="$APTLY_CONFIG" repo create -distribution="$DISTRIBUTION" -component="$COMPONENT" "$REPO_NAME"
@@ -35,10 +34,6 @@ if [ -n "$all_packages" ]; then
     current_major=$(echo "$NEW_VERSION" | cut -d. -f1)
     previous_major_num=$((${current_major#v} - 1))
     previous_major="v${previous_major_num}"
-
-    echo "$all_packages"
-    type sort
-    type uniq
 
     versions=$(echo "$all_packages" | sort -rV | uniq)
 
@@ -79,11 +74,6 @@ aptly -config="$APTLY_CONFIG" publish repo -batch -force-overwrite -component="$
 
 mkdir -p "$REPO_DIR"
 cp -a .aptly/public/. "$REPO_DIR"
-
-echo "---"
-find "$(pwd)/.aptly"
-echo "---"
-find "$REPO_DIR"
 
 gpg --armor --export "$GPG_KEY_ID" > "$REPO_DIR/public.key"
 echo "[OK] Debian repository updated successfully."
