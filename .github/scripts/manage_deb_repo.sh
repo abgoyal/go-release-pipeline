@@ -78,7 +78,7 @@ aptly -config="$APTLY_CONFIG" publish repo -batch -force-overwrite -component="$
 
 
 mkdir -p "$REPO_DIR"
-cp -a .aptly/public/. "$REPO_DIR"
+cp -a .aptly/public/"$REPO_DIR"/. "$REPO_DIR"
 
 echo "---"
 find "$(pwd)/.aptly"
