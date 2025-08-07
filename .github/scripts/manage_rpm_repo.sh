@@ -11,6 +11,11 @@ KEEP_CURRENT_MAJOR=5
 KEEP_PREVIOUS_MAJOR=1
 
 # --- GPG SETUP ---
+GPG_HOME=$(mktemp -d)
+trap 'rm -rf -- "$GPG_HOME"' EXIT
+chmod 700 "$GPG_HOME"
+export GNUPGHOME="$GPG_HOME"
+
 echo "${GPG_PRIVATE_KEY}" | gpg --batch --import
 GPG_KEY_ID=$(gpg --list-secret-keys --keyid-format long | grep 'sec ' | awk '{print $2}' | cut -d'/' -f2)
 
@@ -58,4 +63,3 @@ done
 # --- PUBLISH PUBLIC KEY ---
 gpg --armor --export "$GPG_KEY_ID" > "$REPO_DIR/public.key"
 echo "[OK] RPM repository updated successfully."
-

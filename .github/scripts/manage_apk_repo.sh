@@ -69,3 +69,5 @@ done
 
 echo "[OK] Alpine repository updated successfully."
 
+# --- CLEAN GPG ---
+rm -rf ~/.gnupg/

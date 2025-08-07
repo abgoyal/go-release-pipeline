@@ -12,6 +12,11 @@ KEEP_CURRENT_MAJOR=5
 KEEP_PREVIOUS_MAJOR=1
 
 # --- GPG SETUP ---
+GPG_HOME=$(mktemp -d)
+trap 'rm -rf -- "$GPG_HOME"' EXIT
+chmod 700 "$GPG_HOME"
+export GNUPGHOME="$GPG_HOME"
+
 echo "${GPG_PRIVATE_KEY}" | gpg --batch --import
 GPG_KEY_ID=$(gpg --list-secret-keys --keyid-format long | grep 'sec ' | awk '{print $2}' | cut -d'/' -f2)
 
@@ -20,7 +25,7 @@ APTLY_CONFIG=$(mktemp)
 cat > "$APTLY_CONFIG" <<EOF
 { "rootDir": "$(pwd)/.aptly", "architectures": ["amd64", "arm64"] }
 EOF
-trap 'rm -f -- "$APTLY_CONFIG"' EXIT
+#trap 'rm -f -- "$APTLY_CONFIG"' EXIT
 
 # Check if repo exists, create if not
 if ! aptly -config="$APTLY_CONFIG" repo show "$REPO_NAME" > /dev/null 2>&1; then
