@@ -174,11 +174,7 @@ jobs:
           GPG_PRIVATE_KEY: ${{ secrets.APK_GPG_PRIVATE_KEY }}
           NEW_VERSION: ${{ needs.goreleaser.outputs.tag }}
         run: |
-          docker run --rm -v $PWD:/work -w /work alpine:latest sh -c "
-          apk update &&
-          apk add abuild &&
-          bash .github/scripts/manage_apk_repo.sh
-        "
+          docker run --rm -v $PWD:/work -w /work alpine:latest sh -c "apk update && apk add abuild bash && bash .github/scripts/manage_apk_repo.sh"
       - name: Commit and Push to gh-pages
         run: |
           cd gh-pages
