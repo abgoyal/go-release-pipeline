@@ -77,6 +77,9 @@ aptly -config="$APTLY_CONFIG" publish repo -batch -force-overwrite -component="$
     -gpg-key="$GPG_KEY_ID" -passphrase="$GPG_PASSPHRASE" "$REPO_NAME" "$REPO_DIR"
 
 
+mkdir -p "$REPO_DIR"
+cp -a .aptly/public/. "$REPO_DIR"
+
 echo "---"
 find "$(pwd)/.aptly"
 echo "---"
@@ -84,4 +87,3 @@ find "$REPO_DIR"
 
 gpg --armor --export "$GPG_KEY_ID" > "$REPO_DIR/public.key"
 echo "[OK] Debian repository updated successfully."
-
