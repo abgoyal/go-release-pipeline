@@ -29,8 +29,8 @@ for arch in x86_64 aarch64; do
 
     # --- CLEANUP OLD PACKAGES ---
     echo "[CLEANUP] Cleaning up old packages in $ARCH_DIR..."
-    versions=$(find "$ARCH_DIR" -name "*.apk" -exec basename {} \; | \
-               grep -oP 'v[0-9]+\.[0-9]+\.[0-9]+' | sort -rV | uniq || true)
+    versions=$(find "$ARCH_DIR" -name '*.apk' -exec basename {} \; | \
+               grep -oE 'v[0-9]+\.[0-9]+\.[0-9]+' | sort -rV | uniq || true)
 
     if [ -n "$versions" ]; then
         current_major=$(echo "$NEW_VERSION" | cut -d. -f1)
@@ -49,7 +49,7 @@ for arch in x86_64 aarch64; do
     fi
 
     # --- ADD NEW PACKAGES ---
-    APK_FILES=$(find "$ARTIFACTS_DIR" -path "*/builds/*" -name "*${arch}*.apk" || true)
+    APK_FILES=$(find "$ARTIFACTS_DIR" -name '*${arch}*.apk' || true)
     if [ -n "$APK_FILES" ]; then
         echo "[ADD] Adding new packages for $arch..."
         cp $APK_FILES "$ARCH_DIR/"
