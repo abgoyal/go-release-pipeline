@@ -1,0 +1,23 @@
+name: 'Test Package Installation'
+description: 'Tests package installation in a container for a given distro and architecture'
+inputs:
+  distro:
+    required: true
+  repo_owner:
+    required: true
+  repo_name:
+    required: true
+  arch:
+    required: true
+  tag:
+    required: true
+runs:
+  using: 'docker'
+  image: 'Dockerfile'
+  env:
+    DISTRO: ${{ inputs.distro }}
+    REPO_OWNER: ${{ inputs.repo_owner }}
+    REPO_NAME: ${{ inputs.repo_name }}
+    ARCH: ${{ inputs.arch }}
+    TAG: ${{ inputs.tag }}
+

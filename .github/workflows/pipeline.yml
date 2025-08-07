@@ -1,0 +1,247 @@
+name: Reusable Go Release Pipeline
+on:
+  workflow_call:
+    inputs:
+      go-version:
+        type: string
+        required: false
+        default: '1.24'
+      goreleaser-config-path:
+        type: string
+        required: true
+      dry-run:
+        type: boolean
+        required: false
+        default: false
+      enable-deb:
+        type: boolean
+        required: false
+        default: false
+      deb-postinstall-path:
+        type: string
+        required: false
+      enable-rpm:
+        type: boolean
+        required: false
+        default: false
+      rpm-postinstall-path:
+        type: string
+        required: false
+      enable-apk:
+        type: boolean
+        required: false
+        default: false
+    secrets:
+      GITHUB_TOKEN:
+        required: true
+      DEB_GPG_PRIVATE_KEY:
+        required: false
+      DEB_GPG_PASSPHRASE:
+        required: false
+      RPM_GPG_PRIVATE_KEY:
+        required: false
+      RPM_GPG_PASSPHRASE:
+        required: false
+      APK_GPG_PRIVATE_KEY:
+        required: false
+      APK_GPG_PASSPHRASE:
+        required: false
+
+jobs:
+  validate-inputs:
+    runs-on: ubuntu-latest
+    outputs:
+      tag: ${{ steps.vars.outputs.tag }}
+    steps:
+      - name: Checkout Calling Repository to check files
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ github.repository }}
+      - name: Validate Inputs and Secrets
+        run: |
+          set -e
+          echo "[INFO] Validating inputs and secrets..."
+          if [ ! -f "${{ inputs.goreleaser-config-path }}" ]; then
+            echo "Error: GoReleaser config file not found at '${{ inputs.goreleaser-config-path }}'"
+            exit 1
+          fi
+          if [ "${{ inputs.enable-deb }}" == "true" ]; then
+            if [ -z "${{ secrets.DEB_GPG_PRIVATE_KEY }}" ]; then echo "Error: Debian packaging is enabled, but DEB_GPG_PRIVATE_KEY secret is not set."; exit 1; fi
+            if [ ! -f "${{ inputs.deb-postinstall-path }}" ]; then echo "Error: Debian packaging is enabled, but post-install script not found at '${{ inputs.deb-postinstall-path }}'"; exit 1; fi
+          fi
+          if [ "${{ inputs.enable-rpm }}" == "true" ]; then
+            if [ -z "${{ secrets.RPM_GPG_PRIVATE_KEY }}" ]; then echo "Error: RPM packaging is enabled, but RPM_GPG_PRIVATE_KEY secret is not set."; exit 1; fi
+            if [ ! -f "${{ inputs.rpm-postinstall-path }}" ]; then echo "Error: RPM packaging is enabled, but post-install script not found at '${{ inputs.rpm-postinstall-path }}'"; exit 1; fi
+          fi
+          if [ "${{ inputs.enable-apk }}" == "true" ] && [ -z "${{ secrets.APK_GPG_PRIVATE_KEY }}" ]; then
+            echo "Error: APK packaging is enabled, but APK_GPG_PRIVATE_KEY secret is not set."; exit 1
+          fi
+          echo "[OK] All required inputs and secrets are valid."
+      - name: Get tag
+        id: vars
+        run: echo "tag=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+
+  goreleaser:
+    needs: validate-inputs
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    outputs:
+      tag: ${{ needs.validate-inputs.outputs.tag }}
+    steps:
+      - name: Checkout Calling Repository
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ github.repository }}
+          fetch-depth: 0
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: ${{ inputs.go-version }}
+      - name: Setup Go build cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/go-build
+          key: ${{ runner.os }}-go-build-cache-${{ hashFiles('**/go.sum') }}
+      - name: Import GPG Keys
+        uses: crazy-max/ghaction-import-gpg@v6
+        with:
+          gpg_private_key: |
+            ${{ inputs.enable-deb && secrets.DEB_GPG_PRIVATE_KEY || '' }}
+            ${{ inputs.enable-rpm && secrets.RPM_GPG_PRIVATE_KEY || '' }}
+            ${{ inputs.enable-apk && secrets.APK_GPG_PRIVATE_KEY || '' }}
+          passphrase: |
+            ${{ inputs.enable-deb && secrets.DEB_GPG_PASSPHRASE || '' }}
+            ${{ inputs.enable-rpm && secrets.RPM_GPG_PASSPHRASE || '' }}
+            ${{ inputs.enable-apk && secrets.APK_GPG_PASSPHRASE || '' }}
+      - name: Run GoReleaser
+        uses: goreleaser/goreleaser-action@v5
+        with:
+          distribution: goreleaser
+          version: '~> v2'
+          args: release --clean ${{ inputs.dry-run && '--snapshot' || '' }} --config ${{ inputs.goreleaser-config-path }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          DEB_GPG_PASSPHRASE: ${{ secrets.DEB_GPG_PASSPHRASE }}
+          RPM_GPG_PASSPHRASE: ${{ secrets.RPM_GPG_PASSPHRASE }}
+          APK_GPG_PASSPHRASE: ${{ secrets.APK_GPG_PASSPHRASE }}
+          DEB_POSTINSTALL_PATH: ${{ inputs.deb-postinstall-path }}
+          RPM_POSTINSTALL_PATH: ${{ inputs.rpm-postinstall-path }}
+
+  update-repo:
+    runs-on: ubuntu-latest
+    needs: goreleaser
+    if: always() && !inputs.dry-run && (inputs.enable-deb || inputs.enable-rpm || inputs.enable-apk)
+    permissions:
+      contents: write
+      pages: write
+    steps:
+      - name: Checkout Pipeline Repo for Scripts
+        uses: actions/checkout@v4
+      - name: Checkout Calling Repo's gh-pages
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ github.repository }}
+          ref: gh-pages
+          path: gh-pages
+      - name: Cache apt packages
+        uses: actions/cache@v4
+        with:
+          path: /var/cache/apt/archives
+          key: ${{ runner.os }}-apt-cache-v1
+      - name: Install Dependencies
+        run: sudo apt-get update && sudo apt-get install -y aptly createrepo-c abuild
+      - name: Download Artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: goreleaser-artifacts
+          path: artifacts
+      - name: Update Debian Repository
+        if: inputs.enable-deb
+        env:
+          GPG_PRIVATE_KEY: ${{ secrets.DEB_GPG_PRIVATE_KEY }}
+          GPG_PASSPHRASE: ${{ secrets.DEB_GPG_PASSPHRASE }}
+          REPO_NAME: ${{ github.event.repository.name }}
+          NEW_VERSION: ${{ needs.goreleaser.outputs.tag }}
+        run: bash .github/scripts/manage_deb_repo.sh
+      - name: Update RPM Repository
+        if: inputs.enable-rpm
+        env:
+          GPG_PRIVATE_KEY: ${{ secrets.RPM_GPG_PRIVATE_KEY }}
+          NEW_VERSION: ${{ needs.goreleaser.outputs.tag }}
+        run: bash .github/scripts/manage_rpm_repo.sh
+      - name: Update Alpine Repository
+        if: inputs.enable-apk
+        env:
+          GPG_PRIVATE_KEY: ${{ secrets.APK_GPG_PRIVATE_KEY }}
+          NEW_VERSION: ${{ needs.goreleaser.outputs.tag }}
+        run: bash .github/scripts/manage_apk_repo.sh
+      - name: Commit and Push to gh-pages
+        run: |
+          cd gh-pages
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add .
+          if git diff --staged --quiet; then
+            echo "[INFO] No changes to repository."
+          else
+            git commit -m "Update repositories for release ${{ needs.goreleaser.outputs.tag }}"
+            git push
+          fi
+
+  test-packages:
+    runs-on: ubuntu-latest
+    needs: update-repo
+    if: always() && !inputs.dry-run && (inputs.enable-deb || inputs.enable-rpm || inputs.enable-apk)
+    strategy:
+      fail-fast: false
+      matrix:
+        package_info:
+          - { type: 'deb', distro: 'ubuntu', enabled: ${{ inputs.enable-deb }} }
+          - { type: 'rpm', distro: 'fedora', enabled: ${{ inputs.enable-rpm }} }
+          - { type: 'apk', distro: 'alpine', enabled: ${{ inputs.enable-apk }} }
+        arch: [amd64, arm64]
+    steps:
+      - name: Checkout Pipeline Repo for Test Action
+        if: matrix.package_info.enabled
+        uses: actions/checkout@v4
+      - name: Set up QEMU
+        if: matrix.package_info.enabled
+        uses: docker/setup-qemu-action@v3
+      - name: Test package on ${{ matrix.package_info.distro }} (${{ matrix.arch }})
+        if: matrix.package_info.enabled
+        uses: ./.github/actions/test-package
+        with:
+          distro: ${{ matrix.package_info.distro }}
+          repo_owner: ${{ github.repository_owner }}
+          repo_name: ${{ github.event.repository.name }}
+          arch: ${{ matrix.arch }}
+          tag: ${{ needs.goreleaser.outputs.tag }}
+
+  cleanup-releases:
+    runs-on: ubuntu-latest
+    needs: test-packages
+    if: always() && !inputs.dry-run
+    permissions:
+      contents: write
+    steps:
+      - name: Clean up old GitHub Releases
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+          CURRENT_TAG: ${{ needs.goreleaser.outputs.tag }}
+        run: |
+          KEEP_CURRENT_MAJOR=5
+          KEEP_PREVIOUS_MAJOR=1
+          all_tags=$(gh release list --json tagName -q '.[].tagName' | sort -rV)
+          current_major_ver=$(echo "$CURRENT_TAG" | cut -d. -f1)
+          previous_major_ver="v$((${current_major_ver#v} - 1))"
+          tags_to_keep=$((echo "$all_tags" | grep "^$current_major_ver" | head -n $KEEP_CURRENT_MAJOR; echo "$all_tags" | grep "^$previous_major_ver" | head -n $KEEP_PREVIOUS_MAJOR;) | sort | uniq)
+          tags_to_delete=$(comm -23 <(echo "$all_tags" | sort) <(echo "$tags_to_keep" | sort))
+          echo "[INFO] Tags to keep:" && echo "$tags_to_keep" && echo "---"
+          echo "[INFO] Tags to delete:" && echo "$tags_to_delete"
+          for tag in $tags_to_delete; do
+            echo "[INFO] Deleting release and tag: $tag"
+            gh release delete "$tag" --yes
+            gh api "repos/$GH_REPO/git/refs/tags/$tag" -X DELETE || echo "[WARN] Failed to delete git tag $tag, it might already be gone."
+          done
