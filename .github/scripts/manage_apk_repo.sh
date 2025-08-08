@@ -5,7 +5,7 @@ set -x
 echo "--- Managing Alpine (APK) Repository ---"
 
 # --- CONFIGURATION ---
-REPO_DIR="gh-pages"
+REPO_DIR="gh-pages/apk"
 ARTIFACTS_DIR="artifacts"
 KEEP_CURRENT_MAJOR=5
 KEEP_PREVIOUS_MAJOR=1
