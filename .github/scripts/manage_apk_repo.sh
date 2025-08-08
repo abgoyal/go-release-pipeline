@@ -20,7 +20,9 @@ echo "${GPG_PRIVATE_KEY}" | gpg --batch --import
 GPG_KEY_ID=$(gpg --list-secret-keys --keyid-format long | grep 'sec ' | awk '{print $2}' | cut -d'/' -f2)
 ABUILD_KEY_NAME="ci-key"
 mkdir -p ~/.abuild
-gpg --export-secret-keys --armor "$GPG_KEY_ID" > ~/.abuild/${ABUILD_KEY_NAME}.rsa
+echo $HOME/.abuild/${ABUILD_KEY_NAME}.rsa
+gpg --export-secret-keys --armor "$GPG_KEY_ID" > $HOME/.abuild/${ABUILD_KEY_NAME}.rsa
+find $HOME/.abuild
 
 # --- PROCESS EACH ARCHITECTURE ---
 #for arch in x86_64 aarch64; do
