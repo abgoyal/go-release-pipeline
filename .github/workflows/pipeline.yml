@@ -92,15 +92,18 @@ jobs:
         with:
           repository: ${{ github.repository }}
           fetch-depth: 0
+
       - name: Set up Go
         uses: actions/setup-go@v5
         with:
           go-version: ${{ inputs.go-version }}
+
       - name: Setup Go build cache
         uses: actions/cache@v4
         with:
           path: ~/.cache/go-build
           key: ${{ runner.os }}-go-build-cache-${{ hashFiles('**/go.sum') }}
+
       - name: Import GPG Keys
         uses: crazy-max/ghaction-import-gpg@v6
         with:
@@ -110,14 +113,15 @@ jobs:
           passphrase: |
             ${{ inputs.enable-deb && secrets.DEB_GPG_PASSPHRASE || '' }}
             ${{ inputs.enable-rpm && secrets.RPM_GPG_PASSPHRASE || '' }}
-      - name: Import APK Signing Key
+
+      - name: Import APK Private Key for GoReleaser
         if: inputs.enable-apk
         run: |
-          mkdir -p $HOME/.abuild
-          echo "${{ secrets.APK_PRIVATE_KEY }}" > $HOME/.abuild/ci-key.rsa
-          chmod 600 $HOME/.abuild/ci-key.rsa
-          # Generate matching public key
-          openssl rsa -in $HOME/.abuild/ci-key.rsa -pubout > $HOME/.abuild/ci-key.rsa.pub
+          # Create a private key file for GoReleaser to use.
+          # Public key generation is not needed here; GoReleaser doesn't use it.
+          echo "${{ secrets.APK_PRIVATE_KEY }}" > ci-key.rsa
+          chmod 600 ci-key.rsa
+
       - name: Run GoReleaser
         uses: goreleaser/goreleaser-action@v5
         with:
@@ -128,9 +132,10 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           DEB_GPG_PASSPHRASE: ${{ secrets.DEB_GPG_PASSPHRASE }}
           RPM_GPG_PASSPHRASE: ${{ secrets.RPM_GPG_PASSPHRASE }}
-          APK_GPG_PASSPHRASE: ${{ secrets.APK_PASSPHRASE }}
           DEB_POSTINSTALL_PATH: ${{ inputs.deb-postinstall-path }}
           RPM_POSTINSTALL_PATH: ${{ inputs.rpm-postinstall-path }}
+          APK_KEY_PATH: "${{ github.workspace }}/ci-key.rsa"
+
       - name: Upload GoReleaser Artifacts
         uses: actions/upload-artifact@v4
         with:
