@@ -23,7 +23,8 @@ mkdir -p ~/.abuild
 gpg --export-secret-keys --armor "$GPG_KEY_ID" > ~/.abuild/${ABUILD_KEY_NAME}.rsa
 
 # --- PROCESS EACH ARCHITECTURE ---
-for arch in x86_64 aarch64; do
+#for arch in x86_64 aarch64; do
+for arch in amd64 arm64; do
     echo "--- Processing architecture: $arch ---"
     ARCH_DIR="$REPO_DIR/$arch"
     mkdir -p "$ARCH_DIR"
