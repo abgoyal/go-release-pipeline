@@ -114,14 +114,6 @@ jobs:
             ${{ inputs.enable-deb && secrets.DEB_GPG_PASSPHRASE || '' }}
             ${{ inputs.enable-rpm && secrets.RPM_GPG_PASSPHRASE || '' }}
 
-      - name: Import APK Private Key for GoReleaser
-        if: inputs.enable-apk
-        run: |
-          # Create a private key file for GoReleaser to use.
-          # Public key generation is not needed here; GoReleaser doesn't use it.
-          echo "${{ secrets.APK_PRIVATE_KEY }}" > ci-key.rsa
-          chmod 600 ci-key.rsa
-
       - name: Run GoReleaser
         uses: goreleaser/goreleaser-action@v5
         with:
@@ -134,7 +126,6 @@ jobs:
           RPM_GPG_PASSPHRASE: ${{ secrets.RPM_GPG_PASSPHRASE }}
           DEB_POSTINSTALL_PATH: ${{ inputs.deb-postinstall-path }}
           RPM_POSTINSTALL_PATH: ${{ inputs.rpm-postinstall-path }}
-          APK_KEY_PATH: "${{ github.workspace }}/ci-key.rsa"
 
       - name: Upload GoReleaser Artifacts
         uses: actions/upload-artifact@v4
