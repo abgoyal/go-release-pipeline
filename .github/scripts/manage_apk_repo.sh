@@ -17,7 +17,7 @@ command -v abuild-sign >/dev/null || { echo "[ERROR] abuild-sign not found"; exi
 command -v apk >/dev/null || { echo "[ERROR] apk not found"; exit 1; }
 
 # --- SETUP ABUILD KEYS ---
-# This key is now used for signing both packages and the index.
+# This key is used for signing both packages and the index.
 mkdir -p "$HOME/.abuild"
 echo "${APK_PRIVATE_KEY}" > "$HOME/.abuild/${ABUILD_KEY_NAME}.rsa"
 chmod 600 "$HOME/.abuild/${ABUILD_KEY_NAME}.rsa"
@@ -49,37 +49,40 @@ for arch_mapping in "amd64:x86_64" "arm64:aarch64"; do
 
         for v in $to_delete; do
             echo "[CLEANUP] Removing files for version $v"
-            # Use GORELEASER_ARCH here to match filenames like project_0.1.0_linux_amd64.apk
             find "$ARCH_DIR" -name "*${v}*${GORELEASER_ARCH}.apk" -exec rm -v {} +
         done
     fi
 
     # --- ADD & SIGN NEW PACKAGES ---
-    # Find the unsigned APKs from GoReleaser artifacts.
     for unsigned_apk in $(find "$ARTIFACTS_DIR" -name "*${GORELEASER_ARCH}*.apk" 2>/dev/null); do
         echo "[PROCESS] Processing new package: $(basename "$unsigned_apk")"
 
         # This rebuild process is CRITICAL. It fixes the artifact from GoReleaser
         # to make it compatible with the official Alpine tools.
         temp_dir=$(mktemp -d)
-        # 1. Extract the contents.
+
+        # 1. Extract the contents into a temporary directory.
         tar -xzf "$unsigned_apk" -C "$temp_dir"
-        # 2. Remove the incorrect datahash line from .PKGINFO.
+
+        # 2. Remove the incorrect datahash line from the .PKGINFO file.
         sed -i '/^datahash =/d' "$temp_dir/.PKGINFO"
 
-        rebuilt_apk_path="$ARCH_DIR/$(basename "$unsigned_apk")"
-        # 3. Create a new, clean tarball with correct paths.
+        # 3. Define an absolute path for the rebuilt package.
+        #    Prepending $PWD is the crucial fix for the "No such file" error,
+        #    as it ensures the path is valid even after we 'cd'.
+        rebuilt_apk_path="$PWD/$ARCH_DIR/$(basename "$unsigned_apk")"
+
+        # 4. Create the new, clean tarball with correct, root-level paths.
         (cd "$temp_dir" && tar -czf "$rebuilt_apk_path" .PKGINFO usr)
 
         rm -rf "$temp_dir"
 
-        # 4. Now, sign the correctly rebuilt package.
+        # 5. Now, sign the correctly rebuilt package.
         echo "[SIGN] Signing $(basename "$rebuilt_apk_path")"
         abuild-sign "$rebuilt_apk_path"
     done
 
     # --- REGENERATE METADATA ---
-    # Check if there are any APK files in the directory to avoid errors.
     if ls "$ARCH_DIR"/*.apk 1> /dev/null 2>&1; then
         echo "[PUBLISH] Regenerating repository metadata for $ALPINE_ARCH..."
         apk index -o "$ARCH_DIR/APKINDEX.tar.gz" "$ARCH_DIR"/*.apk
@@ -93,4 +96,3 @@ openssl rsa -in "$HOME/.abuild/${ABUILD_KEY_NAME}.rsa" -pubout > "$REPO_DIR/${AB
 
 echo "[OK] Alpine repository updated."
 echo "[INFO] Public key is in: $REPO_DIR/${ABUILD_KEY_NAME}.rsa.pub"
-
