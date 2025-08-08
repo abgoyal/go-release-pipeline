@@ -67,9 +67,9 @@ for arch in amd64 arm64; do
     # --- SIGN & REGENERATE METADATA ---
     if [ -n "$(ls -A "$ARCH_DIR"/*.apk 2>/dev/null)" ]; then
         echo "[PUBLISH] Signing packages and regenerating repository metadata for $arch..."
-        abuild-sign -F -k "$HOME/.abuild/${ABUILD_KEY_NAME}.rsa" "$ARCH_DIR"/*.apk
+        abuild-sign -k "$HOME/.abuild/${ABUILD_KEY_NAME}.rsa" "$ARCH_DIR"/*.apk
         apk index -o "$ARCH_DIR/APKINDEX.tar.gz" "$ARCH_DIR"/*.apk
-        abuild-sign -F -k "$HOME/.abuild/${ABUILD_KEY_NAME}.rsa" "$ARCH_DIR/APKINDEX.tar.gz"
+        abuild-sign -k "$HOME/.abuild/${ABUILD_KEY_NAME}.rsa" "$ARCH_DIR/APKINDEX.tar.gz"
     fi
 done
 
