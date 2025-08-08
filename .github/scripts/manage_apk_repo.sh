@@ -57,6 +57,9 @@ for arch in amd64 arm64; do
     if [ -n "$(ls -A "$ARCH_DIR"/*.apk 2>/dev/null)" ]; then
         echo "[PUBLISH] Signing packages and regenerating repository metadata for $arch..."
         for pkg in "$ARCH_DIR"/*.apk; do
+            # Strip any old signatures
+            tar --delete --file="$pkg" --wildcards '*.SIGN.*' 2>/dev/null || true
+            # Re-sign with our key
             abuild-sign -k "$HOME/.abuild/${ABUILD_KEY_NAME}.rsa" "$pkg"
         done
         apk index -o "$ARCH_DIR/APKINDEX.tar.gz" "$ARCH_DIR"/*.apk
