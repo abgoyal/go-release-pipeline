@@ -19,8 +19,11 @@ export GNUPGHOME="$GPG_HOME"
 echo "${GPG_PRIVATE_KEY}" | gpg --batch --import
 GPG_KEY_ID=$(gpg --list-secret-keys --keyid-format long | grep 'sec ' | awk '{print $2}' | cut -d'/' -f2)
 
+find "${ARTIFACTS_DIR}"
+
 # --- PROCESS EACH ARCHITECTURE ---
-for arch in x86_64 aarch64; do
+#for arch in x86_64 aarch64; do
+for arch in amd64 arm64; do
     echo "--- Processing architecture: $arch ---"
     ARCH_DIR="$REPO_DIR/$arch"
     mkdir -p "$ARCH_DIR"

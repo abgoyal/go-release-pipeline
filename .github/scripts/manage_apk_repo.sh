@@ -50,7 +50,7 @@ for arch in x86_64 aarch64; do
     fi
 
     # --- ADD NEW PACKAGES ---
-    APK_FILES=$(find "$ARTIFACTS_DIR" -name '*${arch}*.apk' || true)
+    APK_FILES=$(find "$ARTIFACTS_DIR" -name "*${arch}*.apk" || true)
     if [ -n "$APK_FILES" ]; then
         echo "[ADD] Adding new packages for $arch..."
         cp $APK_FILES "$ARCH_DIR/"
