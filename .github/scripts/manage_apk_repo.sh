@@ -61,9 +61,9 @@ for arch in amd64 arm64; do
     if [ -n "$(ls -A "$ARCH_DIR"/*.apk 2>/dev/null)" ]; then
         echo "[PUBLISH] Signing packages and regenerating repository metadata for $arch..."
         # We need to re-sign existing packages as well if they were not touched
-        for pkg in "$ARCH_DIR"/*.apk; do abuild-sign -k "${ABUILD_KEY_NAME}.rsa" "$pkg"; done
+        for pkg in "$ARCH_DIR"/*.apk; do abuild-sign -k "$HOME/.abuild/${ABUILD_KEY_NAME}.rsa" "$pkg"; done
         apk index -o "$ARCH_DIR/APKINDEX.tar.gz" "$ARCH_DIR"/*.apk
-        abuild-sign -k "${ABUILD_KEY_NAME}.rsa" "$ARCH_DIR/APKINDEX.tar.gz"
+        abuild-sign -k "$HOME/.abuild/${ABUILD_KEY_NAME}.rsa" "$ARCH_DIR/APKINDEX.tar.gz"
         gpg --export --armor "$GPG_KEY_ID" > "$ARCH_DIR/${ABUILD_KEY_NAME}.rsa.pub"
     fi
 done
