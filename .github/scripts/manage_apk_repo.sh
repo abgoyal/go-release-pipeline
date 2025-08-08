@@ -11,6 +11,11 @@ KEEP_CURRENT_MAJOR=5
 KEEP_PREVIOUS_MAJOR=1
 ABUILD_KEY_NAME="ci-key"
 
+# --- CHECK TOOLS ---
+command -v openssl >/dev/null || { echo "ERROR: openssl not found"; exit 1; }
+command -v abuild-sign >/dev/null || { echo "ERROR: abuild-sign not found"; exit 1; }
+command -v apk >/dev/null || { echo "ERROR: apk not found"; exit 1; }
+
 # --- SETUP ABUILD KEYS ---
 mkdir -p ~/.abuild
 echo "${APK_PRIVATE_KEY}" > "$HOME/.abuild/${ABUILD_KEY_NAME}.rsa"
@@ -19,7 +24,7 @@ chmod 600 "$HOME/.abuild/${ABUILD_KEY_NAME}.rsa"
 # Generate matching public key (Alpine format)
 openssl rsa -in "$HOME/.abuild/${ABUILD_KEY_NAME}.rsa" -pubout > "$HOME/.abuild/${ABUILD_KEY_NAME}.rsa.pub"
 
-# Make the repo trust our key
+# Install pubkey so apk index can trust signatures
 mkdir -p /etc/apk/keys
 cp "$HOME/.abuild/${ABUILD_KEY_NAME}.rsa.pub" /etc/apk/keys/
 
@@ -57,9 +62,19 @@ for arch in amd64 arm64; do
         cp $APK_FILES "$ARCH_DIR/"
     fi
 
-    # --- GENERATE METADATA ---
+    # --- STRIP OLD SIGNATURES & RE-SIGN ---
     if [ -n "$(ls -A "$ARCH_DIR"/*.apk 2>/dev/null)" ]; then
-        echo "[PUBLISH] Generating repository metadata for $arch..."
+        echo "[PUBLISH] Signing packages and regenerating repository metadata for $arch..."
+
+        # Remove any old signatures (e.g., from GoReleaser)
+        for pkg in "$ARCH_DIR"/*.apk; do
+            tar --delete --file="$pkg" --wildcards '*.SIGN.*' 2>/dev/null || true
+        done
+
+        # Re-sign with our key
+        abuild-sign -k "$HOME/.abuild/${ABUILD_KEY_NAME}.rsa" "$ARCH_DIR"/*.apk
+
+        # Generate fresh index and sign it
         apk index -o "$ARCH_DIR/APKINDEX.tar.gz" "$ARCH_DIR"/*.apk
         abuild-sign -k "$HOME/.abuild/${ABUILD_KEY_NAME}.rsa" "$ARCH_DIR/APKINDEX.tar.gz"
     fi
