@@ -110,6 +110,14 @@ jobs:
           passphrase: |
             ${{ inputs.enable-deb && secrets.DEB_GPG_PASSPHRASE || '' }}
             ${{ inputs.enable-rpm && secrets.RPM_GPG_PASSPHRASE || '' }}
+      - name: Import APK Signing Key
+        if: inputs.enable-apk
+        run: |
+          mkdir -p /root/.abuild
+          echo "${{ secrets.APK_PRIVATE_KEY }}" > /root/.abuild/ci-key.rsa
+          chmod 600 /root/.abuild/ci-key.rsa
+          # Generate matching public key
+          openssl rsa -in /root/.abuild/ci-key.rsa -pubout > /root/.abuild/ci-key.rsa.pub
       - name: Run GoReleaser
         uses: goreleaser/goreleaser-action@v5
         with:
