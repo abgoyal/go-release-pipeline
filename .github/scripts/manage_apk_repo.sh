@@ -30,6 +30,29 @@ fi
 mkdir -p /etc/apk/keys
 cp "$HOME/.abuild/${ABUILD_KEY_NAME}.rsa.pub" /etc/apk/keys/
 
+
+
+echo "=== Inspecting APK signatures ==="
+for apk in artifacts/*.apk; do
+  echo
+  echo "--- $apk ---"
+  
+  # List any SIGN files inside the APK
+  SIGN_FILE=$(tar -tzf "$apk" | grep '^\.SIGN' || true)
+  
+  if [ -z "$SIGN_FILE" ]; then
+    echo "No signature found in this APK."
+  else
+    echo "Signature file inside APK: $SIGN_FILE"
+    
+    # Show size and first few bytes of signature
+    tar -xOf "$apk" "$SIGN_FILE" | hexdump -C | head -n 4
+  fi
+done
+echo "=== End of inspection ==="
+
+
+
 # --- PROCESS EACH ARCHITECTURE ---
 for arch in amd64 arm64; do
     echo "--- Processing architecture: $arch ---"
