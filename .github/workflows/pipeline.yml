@@ -71,8 +71,8 @@ jobs:
             if [ -z "${{ secrets.RPM_GPG_PRIVATE_KEY }}" ]; then echo "Error: RPM packaging is enabled, but RPM_GPG_PRIVATE_KEY secret is not set."; exit 1; fi
             if [ ! -f "${{ inputs.rpm-postinstall-path }}" ]; then echo "Error: RPM packaging is enabled, but post-install script not found at '${{ inputs.rpm-postinstall-path }}'"; exit 1; fi
           fi
-          if [ "${{ inputs.enable-apk }}" == "true" ] && [ -z "${{ secrets.APK_GPG_PRIVATE_KEY }}" ]; then
-            echo "Error: APK packaging is enabled, but APK_GPG_PRIVATE_KEY secret is not set."; exit 1
+          if [ "${{ inputs.enable-apk }}" == "true" ] && [ -z "${{ secrets.APK_PRIVATE_KEY }}" ]; then
+            echo "Error: APK packaging is enabled, but APK_PRIVATE_KEY secret is not set."; exit 1
           fi
           echo "[OK] All required inputs and secrets are valid."
       - name: Get tag
@@ -107,11 +107,9 @@ jobs:
           gpg_private_key: |
             ${{ inputs.enable-deb && secrets.DEB_GPG_PRIVATE_KEY || '' }}
             ${{ inputs.enable-rpm && secrets.RPM_GPG_PRIVATE_KEY || '' }}
-            ${{ inputs.enable-apk && secrets.APK_GPG_PRIVATE_KEY || '' }}
           passphrase: |
             ${{ inputs.enable-deb && secrets.DEB_GPG_PASSPHRASE || '' }}
             ${{ inputs.enable-rpm && secrets.RPM_GPG_PASSPHRASE || '' }}
-            ${{ inputs.enable-apk && secrets.APK_GPG_PASSPHRASE || '' }}
       - name: Run GoReleaser
         uses: goreleaser/goreleaser-action@v5
         with:
@@ -122,7 +120,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           DEB_GPG_PASSPHRASE: ${{ secrets.DEB_GPG_PASSPHRASE }}
           RPM_GPG_PASSPHRASE: ${{ secrets.RPM_GPG_PASSPHRASE }}
-          APK_GPG_PASSPHRASE: ${{ secrets.APK_GPG_PASSPHRASE }}
+          APK_GPG_PASSPHRASE: ${{ secrets.APK_PASSPHRASE }}
           DEB_POSTINSTALL_PATH: ${{ inputs.deb-postinstall-path }}
           RPM_POSTINSTALL_PATH: ${{ inputs.rpm-postinstall-path }}
       - name: Upload GoReleaser Artifacts
