@@ -19,6 +19,10 @@ chmod 600 "$HOME/.abuild/${ABUILD_KEY_NAME}.rsa"
 # Generate matching public key (Alpine format)
 openssl rsa -in "$HOME/.abuild/${ABUILD_KEY_NAME}.rsa" -pubout > "$HOME/.abuild/${ABUILD_KEY_NAME}.rsa.pub"
 
+# Make the repo trust our key
+mkdir -p /etc/apk/keys
+cp "$HOME/.abuild/${ABUILD_KEY_NAME}.rsa.pub" /etc/apk/keys/
+
 # --- PROCESS EACH ARCHITECTURE ---
 for arch in amd64 arm64; do
     echo "--- Processing architecture: $arch ---"
@@ -53,15 +57,9 @@ for arch in amd64 arm64; do
         cp $APK_FILES "$ARCH_DIR/"
     fi
 
-    # --- SIGN & REGENERATE METADATA ---
+    # --- GENERATE METADATA ---
     if [ -n "$(ls -A "$ARCH_DIR"/*.apk 2>/dev/null)" ]; then
-        echo "[PUBLISH] Signing packages and regenerating repository metadata for $arch..."
-        for pkg in "$ARCH_DIR"/*.apk; do
-            # Strip any old signatures
-            tar --delete --file="$pkg" --wildcards '*.SIGN.*' 2>/dev/null || true
-            # Re-sign with our key
-            abuild-sign -k "$HOME/.abuild/${ABUILD_KEY_NAME}.rsa" "$pkg"
-        done
+        echo "[PUBLISH] Generating repository metadata for $arch..."
         apk index -o "$ARCH_DIR/APKINDEX.tar.gz" "$ARCH_DIR"/*.apk
         abuild-sign -k "$HOME/.abuild/${ABUILD_KEY_NAME}.rsa" "$ARCH_DIR/APKINDEX.tar.gz"
     fi
@@ -70,5 +68,5 @@ done
 # --- PUBLISH PUBKEY AT REPO ROOT ---
 cp "$HOME/.abuild/${ABUILD_KEY_NAME}.rsa.pub" "$REPO_DIR/pubkey"
 
-echo "[OK] Alpine repository updated successfully."
-echo "[INFO] Public key is available at: $REPO_DIR/pubkey"
+echo "[OK] Alpine repository updated."
+echo "[INFO] Public key is in: $REPO_DIR/pubkey"
