@@ -113,11 +113,11 @@ jobs:
       - name: Import APK Signing Key
         if: inputs.enable-apk
         run: |
-          mkdir -p /root/.abuild
-          echo "${{ secrets.APK_PRIVATE_KEY }}" > /root/.abuild/ci-key.rsa
-          chmod 600 /root/.abuild/ci-key.rsa
+          mkdir -p $HOME/.abuild
+          echo "${{ secrets.APK_PRIVATE_KEY }}" > $HOME/.abuild/ci-key.rsa
+          chmod 600 $HOME/.abuild/ci-key.rsa
           # Generate matching public key
-          openssl rsa -in /root/.abuild/ci-key.rsa -pubout > /root/.abuild/ci-key.rsa.pub
+          openssl rsa -in $HOME/.abuild/ci-key.rsa -pubout > $HOME/.abuild/ci-key.rsa.pub
       - name: Run GoReleaser
         uses: goreleaser/goreleaser-action@v5
         with:
