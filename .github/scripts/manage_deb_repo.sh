@@ -1,6 +1,6 @@
 #!/bin/bash
 set -eou pipefail
-
+set -x
 echo "--- Managing Debian (APT) Repository using Aptly ---"
 
 # --- CONFIGURATION ---
