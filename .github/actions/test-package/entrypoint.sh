@@ -6,13 +6,13 @@ echo "--- Starting test for $DISTRO on $ARCH ---"
 
 case "$DISTRO" in
     ubuntu)
-        ./test-deb.sh
+        /test-deb.sh
         ;;
     fedora)
-        ./test-rpm.sh
+        /test-rpm.sh
         ;;
     alpine)
-        ./test-apk.sh
+        /test-apk.sh
         ;;
     *)
         echo "Error: Unknown distribution '$DISTRO'"
