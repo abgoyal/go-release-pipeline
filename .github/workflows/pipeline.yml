@@ -2,6 +2,9 @@ name: Reusable Go Release Pipeline
 on:
   workflow_call:
     inputs:
+      releaser-repo:
+        type: string
+        required: true
       go-version:
         type: string
         required: false
@@ -144,7 +147,7 @@ jobs:
       - name: Checkout Pipeline Repo for Scripts
         uses: actions/checkout@v4
         with:
-          repository: abgoyal/go-release-pipeline
+          repository: ${{ inputs.releaser_repo }}
       - name: Checkout Calling Repo's gh-pages
         uses: actions/checkout@v4
         with:
