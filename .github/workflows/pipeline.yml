@@ -228,6 +228,8 @@ jobs:
           (matrix.package_info.type == 'rpm' && inputs.enable-rpm) ||
           (matrix.package_info.type == 'apk' && inputs.enable-apk)
         uses: actions/checkout@v4
+        with:
+          repository: ${{ inputs.releaser-repo }}
       - name: Set up QEMU
         if: >
           (matrix.package_info.type == 'deb' && inputs.enable-deb) ||
