@@ -3,7 +3,6 @@ set -ex
 
 REPO_URL="https://${REPO_OWNER}.github.io/${REPO_NAME}"
 PLATFORM="linux/$ARCH"
-RPM_ARCH=$([ "$ARCH" = "amd64" ] && echo "x86_64" || echo "aarch64")
 
 docker run --rm --platform "$PLATFORM" fedora:latest sh -c " \
     set -ex && \
@@ -11,7 +10,9 @@ docker run --rm --platform "$PLATFORM" fedora:latest sh -c " \
     tee /etc/yum.repos.d/${REPO_NAME}.repo <<EOF
 [${REPO_NAME}]
 name=${REPO_NAME}
-baseurl=${REPO_URL}/rpm/${RPM_ARCH}
+# --- FIX: Use the \$basearch variable for dnf ---
+# The backslash ensures that \$basearch is written literally to the file.
+baseurl=${REPO_URL}/rpm/\\\$basearch
 enabled=1
 gpgcheck=1
 gpgkey=${REPO_URL}/rpm/public.key
