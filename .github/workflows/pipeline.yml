@@ -147,7 +147,7 @@ jobs:
       - name: Checkout Pipeline Repo for Scripts
         uses: actions/checkout@v4
         with:
-          repository: ${{ inputs.releaser_repo }}
+          repository: ${{ inputs.releaser-repo }}
       - name: Checkout Calling Repo's gh-pages
         uses: actions/checkout@v4
         with:
