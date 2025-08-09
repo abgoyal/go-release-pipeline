@@ -48,12 +48,6 @@ on:
       APK_GPG_PASSPHRASE:
         required: false
 
-permissions:
-  contents: write   # For pushing to gh-pages branch
-  pages: write      # For creating the Pages artifact
-  id-token: write   # For authenticating the deployment
-
-
 jobs:
   validate-inputs:
     runs-on: ubuntu-latest
@@ -146,9 +140,9 @@ jobs:
     runs-on: ubuntu-latest
     needs: goreleaser
     if: always() && !inputs.dry-run && (inputs.enable-deb || inputs.enable-rpm || inputs.enable-apk)
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
+    permissions:
+      contents: write
+      pages: write
     steps:
       - name: Checkout Pipeline Repo for Scripts
         uses: actions/checkout@v4
@@ -214,18 +208,51 @@ jobs:
             git commit -m "Update repositories for release ${{ needs.goreleaser.outputs.tag }}"
             git push
           fi
-      - name: Setup Pages
-        uses: actions/configure-pages@v5
+      - name: Wait for Pages Deployment to Finish
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          echo "Waiting for GitHub Pages deployment to complete..."
 
-      - name: Upload Pages artifact
-        uses: actions/upload-pages-artifact@v3
-        with:
-          # Upload the 'gh-pages' directory that was checked out and updated
-          path: ./gh-pages
+          # Loop for a maximum of 5 minutes (30 attempts * 10 seconds)
+          for i in {1..30}; do
+            # STEP 1: Get the statuses_url from the most recent deployment.
+            # This is the URL that contains the actual status history.
+            statuses_url=$(gh api "repos/$GH_REPO/deployments?environment=github-pages" -q '.[0].statuses_url')
 
-      - name: Deploy to GitHub Pages
-        id: deployment
-        uses: actions/deploy-pages@v4
+            # Check if a deployment has been created yet.
+            if [ -z "$statuses_url" ] || [ "$statuses_url" == "null" ]; then
+              echo "Attempt $i: Deployment not created yet. Waiting..."
+              sleep 10
+              continue
+            fi
+
+            # STEP 2: Query the statuses_url to get the state of the latest status.
+            # The 'state' field can be 'success', 'in_progress', 'failure', etc.
+            deployment_state=$(gh api "$statuses_url" -q '.[0].state')
+
+            echo "Attempt $i: Current deployment state is '$deployment_state'"
+
+            # Check for the terminal states
+            if [ "$deployment_state" == "success" ]; then
+              echo "✅ Deployment successful!"
+              exit 0
+            elif [ "$deployment_state" == "failure" ] || [ "$deployment_state" == "error" ]; then
+              echo "❌ Deployment failed with state: $deployment_state"
+              # Get the full details of the failed status for debugging
+              gh api "$statuses_url" -q '.[0]'
+              exit 1
+            fi
+
+            # If not finished, wait 10 seconds before the next attempt
+            sleep 10
+          done
+
+          echo "Timed out waiting for pages deployment after 5 minutes."
+          exit 1
+
+
 
   test-packages:
     runs-on: ubuntu-latest
