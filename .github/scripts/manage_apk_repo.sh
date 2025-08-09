@@ -65,7 +65,20 @@ for arch_mapping in "amd64:x86_64" "arm64:aarch64"; do
         tar -xzf "$unsigned_apk" -C "$temp_dir"
         sed -i '/^datahash =/d' "$temp_dir/.PKGINFO"
 
-        rebuilt_apk_path="$PWD/$ARCH_DIR/$(basename "$unsigned_apk")"
+        #rebuilt_apk_path="$PWD/$ARCH_DIR/$(basename "$unsigned_apk")"
+
+        original_filename=$(basename "$unsigned_apk")
+        # Assumes filename format is <name>_<version>_<os>_<arch>.apk
+        pkg_name=$(echo "$original_filename" | cut -d'_' -f1)
+        pkg_ver=$(echo "$original_filename" | cut -d'_' -f2)
+
+        # Construct the standard APK filename that the 'apk' client expects.
+        standard_apk_name="${pkg_name}-${pkg_ver}.apk"
+        echo "[INFO] Renaming to standard format: ${standard_apk_name}"
+
+        # Use the new, standard name for the final path.
+        rebuilt_apk_path="$PWD/$ARCH_DIR/${standard_apk_name}"
+
         (cd "$temp_dir" && tar -czf "$rebuilt_apk_path" .PKGINFO usr)
 
         rm -rf "$temp_dir"

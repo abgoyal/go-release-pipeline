@@ -211,7 +211,7 @@ jobs:
 
   test-packages:
     runs-on: ubuntu-latest
-    needs: update-repo
+    needs: [goreleaser, update-repo]
     if: always() && !inputs.dry-run && (inputs.enable-deb || inputs.enable-rpm || inputs.enable-apk)
     strategy:
       fail-fast: false
