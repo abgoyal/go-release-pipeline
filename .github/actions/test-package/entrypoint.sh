@@ -4,15 +4,18 @@ set -e
 # This script acts as a router to the specific test script.
 echo "--- Starting test for $DISTRO on $ARCH ---"
 
+# Get the directory where this script itself is located.
+SCRIPT_DIR=$(dirname "$0")
+
 case "$DISTRO" in
     ubuntu)
-        /test-deb.sh
+        "$SCRIPT_DIR/test-deb.sh"
         ;;
     fedora)
-        /test-rpm.sh
+        "$SCRIPT_DIR/test-rpm.sh"
         ;;
     alpine)
-        /test-apk.sh
+        "$SCRIPT_DIR/test-apk.sh"
         ;;
     *)
         echo "Error: Unknown distribution '$DISTRO'"
