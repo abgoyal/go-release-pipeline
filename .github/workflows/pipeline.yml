@@ -229,10 +229,16 @@ jobs:
           (matrix.package_info.type == 'apk' && inputs.enable-apk)
         uses: actions/checkout@v4
       - name: Set up QEMU
-        if: matrix.package_info.enabled
+        if: >
+          (matrix.package_info.type == 'deb' && inputs.enable-deb) ||
+          (matrix.package_info.type == 'rpm' && inputs.enable-rpm) ||
+          (matrix.package_info.type == 'apk' && inputs.enable-apk)
         uses: docker/setup-qemu-action@v3
       - name: Test package on ${{ matrix.package_info.distro }} (${{ matrix.arch }})
-        if: matrix.package_info.enabled
+        if: >
+          (matrix.package_info.type == 'deb' && inputs.enable-deb) ||
+          (matrix.package_info.type == 'rpm' && inputs.enable-rpm) ||
+          (matrix.package_info.type == 'apk' && inputs.enable-apk)
         uses: ./.github/actions/test-package
         with:
           distro: ${{ matrix.package_info.distro }}
