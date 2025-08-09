@@ -12,12 +12,14 @@ inputs:
   tag:
     required: true
 runs:
-  using: 'docker'
-  image: 'Dockerfile'
-  env:
-    DISTRO: ${{ inputs.distro }}
-    REPO_OWNER: ${{ inputs.repo_owner }}
-    REPO_NAME: ${{ inputs.repo_name }}
-    ARCH: ${{ inputs.arch }}
-    TAG: ${{ inputs.tag }}
-
+  using: "composite"
+  steps:
+    - name: Run Test Entrypoint
+      run: ${{ github.action_path }}/entrypoint.sh
+      shell: bash
+      env:
+        DISTRO: ${{ inputs.distro }}
+        REPO_OWNER: ${{ inputs.repo_owner }}
+        REPO_NAME: ${{ inputs.repo_name }}
+        ARCH: ${{ inputs.arch }}
+        TAG: ${{ inputs.tag }}
