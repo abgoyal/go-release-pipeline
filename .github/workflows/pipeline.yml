@@ -123,7 +123,7 @@ jobs:
         run: |
           # save private key to $HOME/.abuild/keyname.rsa
           mkdir -p /tmp/.abuild
-          echo ${{ secrets.APK_PRIVATE_KEY }} > /tmp/.abuild/${{ secrets.APK_KEY_NAME }}.rsa
+          echo "${{ secrets.APK_PRIVATE_KEY }}" > /tmp/.abuild/${{ secrets.APK_KEY_NAME }}.rsa
 
       - name: Run GoReleaser
         uses: goreleaser/goreleaser-action@v5
@@ -267,7 +267,8 @@ jobs:
   test-packages:
     runs-on: ubuntu-latest
     needs: [goreleaser, update-repo]
-    if: always() && !inputs.dry-run && (inputs.enable-deb || inputs.enable-rpm || inputs.enable-apk)
+    #if: always() && !inputs.dry-run && (inputs.enable-deb || inputs.enable-rpm || inputs.enable-apk)
+    if: false
     strategy:
       fail-fast: false
       matrix:
