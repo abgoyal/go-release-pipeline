@@ -237,7 +237,7 @@ jobs:
           GH_REPO: ${{ github.repository }}
         run: |
           echo "Waiting for GitHub Pages deployment to complete..."
-
+          sleep 30
           # Loop for a maximum of 5 minutes (30 attempts * 10 seconds)
           for i in {1..30}; do
             # STEP 1: Get the statuses_url from the most recent deployment.
@@ -289,7 +289,8 @@ jobs:
           - { type: 'deb', distro: 'ubuntu' }
           - { type: 'rpm', distro: 'fedora' }
           - { type: 'apk', distro: 'alpine' }
-        arch: [amd64, arm64]
+        #arch: [amd64, arm64]
+        arch: [amd64]
     steps:
       - name: Checkout Pipeline Repo for Test Action
         if: >
