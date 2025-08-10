@@ -22,10 +22,13 @@ GPG_KEY_ID=$(gpg --list-secret-keys --keyid-format long | grep 'sec ' | awk '{pr
 find "${ARTIFACTS_DIR}"
 
 # --- PROCESS EACH ARCHITECTURE ---
+for arch_mapping in "amd64:x86_64" "arm64:aarch64"; do
 #for arch in x86_64 aarch64; do
-for arch in amd64 arm64; do
-    echo "--- Processing architecture: $arch ---"
-    ARCH_DIR="$REPO_DIR/$arch"
+    GORELEASER_ARCH="${arch_mapping%:*}"
+    RPM_ARCH="${arch_mapping#*:}"
+
+    echo "--- Processing architecture: $GORELEASER_ARCH ---"
+    ARCH_DIR="$REPO_DIR/$RPM_ARCH"
     mkdir -p "$ARCH_DIR"
 
     # --- CLEANUP OLD PACKAGES ---
@@ -45,20 +48,20 @@ for arch in amd64 arm64; do
 
         for v in $to_delete; do
             echo "[CLEANUP] Removing files for version $v"
-            find "$ARCH_DIR" -name "*${v}*${arch}.rpm" -exec rm -v {} +
+            find "$ARCH_DIR" -name "*${v}*${GORELEASER_ARCH}.rpm" -exec rm -v {} +
         done
     fi
 
     # --- ADD NEW PACKAGES ---
-    RPM_FILES=$(find "$ARTIFACTS_DIR" -name "*${arch}*.rpm" || true)
+    RPM_FILES=$(find "$ARTIFACTS_DIR" -name "*${GORELEASER_ARCH}*.rpm" || true)
     if [ -n "$RPM_FILES" ]; then
-        echo "[ADD] Adding new packages for $arch..."
+        echo "[ADD] Adding new packages for $GORELEASER_ARCH..."
         cp $RPM_FILES "$ARCH_DIR/"
     fi
 
     # --- REGENERATE METADATA ---
     if [ -n "$(ls -A "$ARCH_DIR"/*.rpm 2>/dev/null)" ]; then
-        echo "[PUBLISH] Regenerating repository metadata for $arch..."
+        echo "[PUBLISH] Regenerating repository metadata for $RPM_ARCH..."
         createrepo_c "$ARCH_DIR"
     fi
 done

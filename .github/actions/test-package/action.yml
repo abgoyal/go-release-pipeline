@@ -11,6 +11,9 @@ inputs:
     required: true
   tag:
     required: true
+  apk_key_name:
+    required: true
+
 runs:
   using: "composite"
   steps:
