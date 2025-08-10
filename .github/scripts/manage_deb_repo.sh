@@ -23,7 +23,7 @@ GPG_KEY_ID=$(gpg --list-secret-keys --keyid-format long | grep 'sec ' | awk '{pr
 # --- APTLY SETUP ---
 APTLY_CONFIG=$(mktemp)
 cat > "$APTLY_CONFIG" <<EOF
-{ "rootDir": "${REPO_DIR}/.aptly", "architectures": ["amd64", "arm64"] }
+{ "rootDir": "$(pwd)/.aptly", "architectures": ["amd64", "arm64"] }
 EOF
 #trap 'rm -f -- "$APTLY_CONFIG"' EXIT
 
