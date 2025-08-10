@@ -122,8 +122,8 @@ jobs:
         if: inputs.enable-apk
         run: |
           # save private key to $HOME/.abuild/keyname.rsa
-          mkdir -p /.abuild
-          echo ${{ secrets.APK_PRIVATE_KEY }} > /.abuild/${{ secrets.APK_KEY_NAME }}.rsa
+          mkdir -p /tmp/.abuild
+          echo ${{ secrets.APK_PRIVATE_KEY }} > /tmp/.abuild/${{ secrets.APK_KEY_NAME }}.rsa
 
       - name: Run GoReleaser
         uses: goreleaser/goreleaser-action@v5
