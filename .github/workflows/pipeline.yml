@@ -121,9 +121,19 @@ jobs:
       - name: Import APK signing key
         if: inputs.enable-apk
         run: |
-          # save private key to $HOME/.abuild/keyname.rsa
+          # save private key to /tmp/.abuild/keyname.rsa
           mkdir -p /tmp/.abuild
           echo "${{ secrets.APK_PRIVATE_KEY }}" > /tmp/.abuild/${{ secrets.APK_KEY_NAME }}.rsa
+      - name: Import DEB signing key
+        if: inputs.enable-deb
+        run: |
+          # save private key to /tmp/deb_signing_key
+          echo "${{ secrets.DEB_GPG_PRIVATE_KEY }}" > /tmp/deb_signing_key
+      - name: Import RPM signing key
+        if: inputs.enable-rpm
+        run: |
+          # save private key to /tmp/rpm_signing_key
+          echo "${{ secrets.RPM_GPG_PRIVATE_KEY }}" > /tmp/rpm_signing_key
 
       - name: Run GoReleaser
         uses: goreleaser/goreleaser-action@v5
@@ -137,6 +147,8 @@ jobs:
           RPM_GPG_PASSPHRASE: ${{ secrets.RPM_GPG_PASSPHRASE }}
           DEB_POSTINSTALL_PATH: ${{ inputs.deb-postinstall-path }}
           RPM_POSTINSTALL_PATH: ${{ inputs.rpm-postinstall-path }}
+          RPM_KEY_FILE: /tmp/rpm_signing_key
+          DEB_KEY_FILE: /tmp/deb_signing_key
           APK_KEY_NAME: ${{ secrets.APK_KEY_NAME }}
           APK_KEY_FILE: /tmp/.abuild/${{ secrets.APK_KEY_NAME }}.rsa
 
