@@ -14,7 +14,7 @@ DEB_URL="${REPO_URL}/deb/pool/main/g/${REPO_NAME}/${DEB_FILE}"
 docker run --rm --platform "$PLATFORM" ubuntu:latest sh -c " \
     set -ex && \
     echo '--- 1. Installing test dependencies ---' && \
-    apt-get update && apt-get install -y wget ca-certificates && \
+    apt-get update && apt-get install -y wget ca-certificates curl gpg && \
     echo '--- 2. Testing first-time install with dpkg ---' && \
     wget \"${DEB_URL}\" && \
     dpkg -i \"${DEB_FILE}\" && \
