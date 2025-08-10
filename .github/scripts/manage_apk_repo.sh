@@ -88,7 +88,7 @@ for arch_mapping in "amd64:x86_64" "arm64:aarch64"; do
     if ls "$ARCH_DIR"/*.apk 1> /dev/null 2>&1; then
         echo "[PUBLISH] Regenerating repository metadata for $ALPINE_ARCH..."
         apk index -o "$ARCH_DIR/APKINDEX.tar.gz" "$ARCH_DIR"/*.apk
-        abuild-sign "$ARCH_DIR/APKINDEX.tar.gz"
+        abuild-sign -k "${APK_KEY_NAME}" "$ARCH_DIR/APKINDEX.tar.gz"
     fi
 done
 
