@@ -34,7 +34,7 @@ for arch_mapping in "amd64:x86_64" "arm64:aarch64"; do
     # --- CLEANUP OLD PACKAGES ---
     echo "[CLEANUP] Cleaning up old packages in $ARCH_DIR..."
     versions=$(find "$ARCH_DIR" -name "*.rpm" -exec basename {} \; | \
-               grep -oP 'v[0-9]+\.[0-9]+\.[0-9]+' | sort -rV | uniq || true)
+               grep -oP '[0-9]+\.[0-9]+\.[0-9]+' | sort -rV | uniq || true)
 
     if [ -n "$versions" ]; then
         current_major=$(echo "$NEW_VERSION" | cut -d. -f1)
