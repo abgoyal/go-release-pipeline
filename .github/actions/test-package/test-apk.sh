@@ -8,11 +8,10 @@ APK_ARCH=$([ "$ARCH" = "amd64" ] && echo "x86_64" || echo "aarch64")
 docker run --rm --platform "$PLATFORM" alpine:latest sh -c " \
     set -ex && \
     apk add --no-cache curl && \
-    curl -fsSL \"${REPO_URL}/apk/ci-key.rsa.pub\" -o /etc/apk/keys/ci-key.rsa.pub && \
+    curl -fsSL \"${REPO_URL}/apk/${APK_KEY_NAME}.rsa.pub\" -o /etc/apk/keys/${APK_KEY_NAME}.rsa.pub && \
     \
     echo \"${REPO_URL}/apk\" >> /etc/apk/repositories && \
     \
     apk update && \
     apk add ${REPO_NAME} && \
     ${REPO_NAME} --version | grep ${TAG#v}"
-

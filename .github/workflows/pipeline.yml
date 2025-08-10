@@ -280,8 +280,8 @@ jobs:
   test-packages:
     runs-on: ubuntu-latest
     needs: [goreleaser, update-repo]
-    #if: always() && !inputs.dry-run && (inputs.enable-deb || inputs.enable-rpm || inputs.enable-apk)
-    if: false
+    if: always() && !inputs.dry-run && (inputs.enable-deb || inputs.enable-rpm || inputs.enable-apk)
+    #if: false
     strategy:
       fail-fast: false
       matrix:
@@ -317,6 +317,7 @@ jobs:
           repo_name: ${{ github.event.repository.name }}
           arch: ${{ matrix.arch }}
           tag: ${{ needs.goreleaser.outputs.tag }}
+          apk_key_name: ${{ secrets.APK_KEY_NAME }}
 
   cleanup-releases:
     runs-on: ubuntu-latest
