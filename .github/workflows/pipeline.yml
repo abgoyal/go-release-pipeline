@@ -43,9 +43,9 @@ on:
         required: false
       RPM_GPG_PASSPHRASE:
         required: false
-      APK_GPG_PRIVATE_KEY:
+      APK_PRIVATE_KEY:
         required: false
-      APK_GPG_PASSPHRASE:
+      APK_KEY_NAME:
         required: false
 
 jobs:
@@ -74,8 +74,9 @@ jobs:
             if [ -z "${{ secrets.RPM_GPG_PRIVATE_KEY }}" ]; then echo "Error: RPM packaging is enabled, but RPM_GPG_PRIVATE_KEY secret is not set."; exit 1; fi
             if [ ! -f "${{ inputs.rpm-postinstall-path }}" ]; then echo "Error: RPM packaging is enabled, but post-install script not found at '${{ inputs.rpm-postinstall-path }}'"; exit 1; fi
           fi
-          if [ "${{ inputs.enable-apk }}" == "true" ] && [ -z "${{ secrets.APK_PRIVATE_KEY }}" ]; then
-            echo "Error: APK packaging is enabled, but APK_PRIVATE_KEY secret is not set."; exit 1
+          if [ "${{ inputs.enable-apk }}" == "true" ]; then
+            if [ -z "${{ secrets.APK_PRIVATE_KEY }}" ]; then echo "Error: APK packaging is enabled, but APK_PRIVATE_KEY secret is not set."; exit 1; fi
+            if [ -z "${{ secrets.APK_KEY_NAME }}" ]; then echo "Error: APK packaging is enabled, but APK_KEY_NAME is not set."; exit 1; fi
           fi
           echo "[OK] All required inputs and secrets are valid."
       - name: Get tag
@@ -117,6 +118,13 @@ jobs:
             ${{ inputs.enable-deb && secrets.DEB_GPG_PASSPHRASE || '' }}
             ${{ inputs.enable-rpm && secrets.RPM_GPG_PASSPHRASE || '' }}
 
+      - name: Import APK signing key
+        if: inputs.enable-apk
+        run: |
+          # save private key to $HOME/.abuild/keyname.rsa
+          mkdir -p /.abuild
+          echo ${{ secrets.APK_PRIVATE_KEY }} > /.abuild/${{ secrets.APK_KEY_NAME }}.rsa
+
       - name: Run GoReleaser
         uses: goreleaser/goreleaser-action@v5
         with:
@@ -129,6 +137,8 @@ jobs:
           RPM_GPG_PASSPHRASE: ${{ secrets.RPM_GPG_PASSPHRASE }}
           DEB_POSTINSTALL_PATH: ${{ inputs.deb-postinstall-path }}
           RPM_POSTINSTALL_PATH: ${{ inputs.rpm-postinstall-path }}
+          APK_KEY_NAME: ${{ secrets.APK_KEY_NAME }}
+          APK_KEY_FILE: /.abuild/${{ secrets.APK_KEY_NAME }}.rsa
 
       - name: Upload GoReleaser Artifacts
         uses: actions/upload-artifact@v4
