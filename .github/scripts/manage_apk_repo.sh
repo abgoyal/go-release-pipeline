@@ -18,11 +18,11 @@ command -v apk >/dev/null || { echo "[ERROR] apk not found"; exit 1; }
 # --- SETUP ABUILD KEYS ---
 mkdir -p "$HOME/.abuild"
 echo "${APK_PRIVATE_KEY}" > "$HOME/.abuild/${APK_KEY_NAME}.rsa"
-chmod 600 "$HOME/.abuild/${ABUILD_KEY_NAME}.rsa"
-#echo "PACKAGER_PRIVKEY=\"$HOME/.abuild/${ABUILD_KEY_NAME}.rsa\"" > "$HOME/.abuild/abuild.conf"
+chmod 600 "$HOME/.abuild/${APK_KEY_NAME}.rsa"
+#echo "PACKAGER_PRIVKEY=\"$HOME/.abuild/${APK_KEY_NAME}.rsa\"" > "$HOME/.abuild/abuild.conf"
 
 mkdir -p /etc/apk/keys/
-openssl rsa -in "$HOME/.abuild/${ABUILD_KEY_NAME}.rsa" -pubout > "/etc/apk/keys/${APK_KEY_NAME}.rsa.pub"
+openssl rsa -in "$HOME/.abuild/${APK_KEY_NAME}.rsa" -pubout > "/etc/apk/keys/${APK_KEY_NAME}.rsa.pub"
 
 # --- PROCESS EACH ARCHITECTURE ---
 for arch_mapping in "amd64:x86_64" "arm64:aarch64"; do
