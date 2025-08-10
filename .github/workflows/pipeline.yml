@@ -138,7 +138,7 @@ jobs:
           DEB_POSTINSTALL_PATH: ${{ inputs.deb-postinstall-path }}
           RPM_POSTINSTALL_PATH: ${{ inputs.rpm-postinstall-path }}
           APK_KEY_NAME: ${{ secrets.APK_KEY_NAME }}
-          APK_KEY_FILE: /.abuild/${{ secrets.APK_KEY_NAME }}.rsa
+          APK_KEY_FILE: /tmp/.abuild/${{ secrets.APK_KEY_NAME }}.rsa
 
       - name: Upload GoReleaser Artifacts
         uses: actions/upload-artifact@v4
