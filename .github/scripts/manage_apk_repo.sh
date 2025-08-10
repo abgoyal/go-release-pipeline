@@ -9,7 +9,6 @@ REPO_DIR="gh-pages/apk"
 ARTIFACTS_DIR="artifacts"
 KEEP_CURRENT_MAJOR=5
 KEEP_PREVIOUS_MAJOR=1
-ABUILD_KEY_NAME="ci-key"
 
 # --- CHECK REQUIRED TOOLS ---
 command -v openssl >/dev/null || { echo "[ERROR] openssl not found"; exit 1; }
@@ -18,15 +17,12 @@ command -v apk >/dev/null || { echo "[ERROR] apk not found"; exit 1; }
 
 # --- SETUP ABUILD KEYS ---
 mkdir -p "$HOME/.abuild"
-echo "${APK_PRIVATE_KEY}" > "$HOME/.abuild/${ABUILD_KEY_NAME}.rsa"
+echo "${APK_PRIVATE_KEY}" > "$HOME/.abuild/${APK_KEY_NAME}.rsa"
 chmod 600 "$HOME/.abuild/${ABUILD_KEY_NAME}.rsa"
-echo "PACKAGER_PRIVKEY=\"$HOME/.abuild/${ABUILD_KEY_NAME}.rsa\"" > "$HOME/.abuild/abuild.conf"
+#echo "PACKAGER_PRIVKEY=\"$HOME/.abuild/${ABUILD_KEY_NAME}.rsa\"" > "$HOME/.abuild/abuild.conf"
 
-# --- THE FIX: TRUST THE PUBLIC KEY ---
-# Generate the public key and copy it to the system's trusted keys directory.
-# This makes all subsequent 'apk' commands trust the signatures we create.
 mkdir -p /etc/apk/keys/
-openssl rsa -in "$HOME/.abuild/${ABUILD_KEY_NAME}.rsa" -pubout > "/etc/apk/keys/${ABUILD_KEY_NAME}.rsa.pub"
+openssl rsa -in "$HOME/.abuild/${ABUILD_KEY_NAME}.rsa" -pubout > "/etc/apk/keys/${APK_KEY_NAME}.rsa.pub"
 
 # --- PROCESS EACH ARCHITECTURE ---
 for arch_mapping in "amd64:x86_64" "arm64:aarch64"; do
@@ -58,16 +54,17 @@ for arch_mapping in "amd64:x86_64" "arm64:aarch64"; do
         done
     fi
 
+
     # --- ADD & SIGN NEW PACKAGES ---
-    for unsigned_apk in $(find "$ARTIFACTS_DIR" -name "*${GORELEASER_ARCH}*.apk" 2>/dev/null); do
-        echo "[PROCESS] Processing new package: $(basename "$unsigned_apk")"
-        temp_dir=$(mktemp -d)
-        tar -xzf "$unsigned_apk" -C "$temp_dir"
-        sed -i '/^datahash =/d' "$temp_dir/.PKGINFO"
+    for signed_apk in $(find "$ARTIFACTS_DIR" -name "*${GORELEASER_ARCH}*.apk" 2>/dev/null); do
+        echo "[PROCESS] Processing new package: $(basename "$signed_apk")"
+        #temp_dir=$(mktemp -d)
+        #tar -xzf "$unsigned_apk" -C "$temp_dir"
+        #sed -i '/^datahash =/d' "$temp_dir/.PKGINFO"
 
         #rebuilt_apk_path="$PWD/$ARCH_DIR/$(basename "$unsigned_apk")"
 
-        original_filename=$(basename "$unsigned_apk")
+        original_filename=$(basename "$signed_apk")
         # Assumes filename format is <name>_<version>_<os>_<arch>.apk
         pkg_name=$(echo "$original_filename" | cut -d'_' -f1)
         pkg_ver=$(echo "$original_filename" | cut -d'_' -f2)
@@ -78,13 +75,13 @@ for arch_mapping in "amd64:x86_64" "arm64:aarch64"; do
 
         # Use the new, standard name for the final path.
         rebuilt_apk_path="$PWD/$ARCH_DIR/${standard_apk_name}"
+        mv "$signed_apk" "$rebuilt_apk_path"
+        #(cd "$temp_dir" && tar -czf "$rebuilt_apk_path" .PKGINFO usr)
 
-        (cd "$temp_dir" && tar -czf "$rebuilt_apk_path" .PKGINFO usr)
+        #rm -rf "$temp_dir"
 
-        rm -rf "$temp_dir"
-
-        echo "[SIGN] Signing $(basename "$rebuilt_apk_path")"
-        abuild-sign "$rebuilt_apk_path"
+        #echo "[SIGN] Signing $(basename "$rebuilt_apk_path")"
+        #abuild-sign "$rebuilt_apk_path"
     done
 
     # --- REGENERATE METADATA ---
@@ -97,8 +94,7 @@ done
 
 # --- PUBLISH PUBKEY AT REPO ROOT ---
 # Copy the trusted key to the final repository for end-users.
-cp "/etc/apk/keys/${ABUILD_KEY_NAME}.rsa.pub" "$REPO_DIR/${ABUILD_KEY_NAME}.rsa.pub"
+cp "/etc/apk/keys/${APK_KEY_NAME}.rsa.pub" "$REPO_DIR/${APK_KEY_NAME}.rsa.pub"
 
 echo "[OK] Alpine repository updated."
-echo "[INFO] Public key is in: $REPO_DIR/${ABUILD_KEY_NAME}.rsa.pub"
-
+echo "[INFO] Public key is in: $REPO_DIR/${APK_KEY_NAME}.rsa.pub"
