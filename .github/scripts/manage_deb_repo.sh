@@ -75,7 +75,7 @@ done
 
 # --- PUBLISH REPO ---
 echo "[PUBLISH] Publishing Debian repository..."
-aptly -config="$APTLY_CONFIG" publish snapshot -batch -force-overwrite -component="$COMPONENT" -distribution="$DISTRIBUTION" \
+aptly -config="$APTLY_CONFIG" publish repo -batch -force-overwrite -component="$COMPONENT" -distribution="$DISTRIBUTION" \
     -gpg-key="$GPG_KEY_ID" -passphrase="$GPG_PASSPHRASE" "$REPO_NAME" .
 
 
