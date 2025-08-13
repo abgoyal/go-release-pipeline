@@ -74,6 +74,9 @@ fi
 aptly -config="$APTLY_CONFIG" repo add "$REPO_NAME" $DEB_FILES
 
 # --- PUBLISH REPO ---
+# clean up old published export, otherwise aptly fails
+rm -rf "$APTLY_HOME/public"
+
 echo "[PUBLISH] Publishing Debian repository..."
 aptly -config="$APTLY_CONFIG" publish repo -batch -force-overwrite -component="$COMPONENT" -distribution="$DISTRIBUTION" \
     -gpg-key="$GPG_KEY_ID" -passphrase="$GPG_PASSPHRASE" "$REPO_NAME" .
