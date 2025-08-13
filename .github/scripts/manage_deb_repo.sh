@@ -81,6 +81,8 @@ aptly -config="$APTLY_CONFIG" publish repo -batch -force-overwrite -component="$
 
 mkdir -p "$REPO_DIR"
 # copy the generated repo static assets to repo root
+# clean old files:
+rm -rf "$REPO_DIR" && mkdir -p "$REPO_DIR"
 cp -a "$APTLY_HOME/public/." "$REPO_DIR"
 
 gpg --armor --export "$GPG_KEY_ID" > "$REPO_DIR/public.key"
