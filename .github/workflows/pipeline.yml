@@ -150,10 +150,20 @@ jobs:
       contents: write
       pages: write
     steps:
+      - name: Get releaser pipeline repo ref
+        id: pipeline-ref
+        env:
+          WORKFLOW_REF: ${{ github.workflow_ref }}
+        run: |
+          REPO=$(echo "$WORKFLOW_REF" | cut -d'/' -f1-2)
+          REF=$(echo "$WORKFLOW_REF" | cut -d'@' -f2)
+          echo "repository=${REPO}" >> $GITHUB_OUTPUT
+          echo "ref=${REF}" >> $GITHUB_OUTPUT
       - name: Checkout Pipeline Repo for Scripts
         uses: actions/checkout@v4
         with:
-          repository: ${{ inputs.releaser-repo }}
+          repository: ${{ steps.pipeline-ref.outputs.repository }}
+          ref: ${{ steps.pipeline-ref.outputs.ref }}
       - name: Checkout Calling Repo's gh-pages
         uses: actions/checkout@v4
         with:
