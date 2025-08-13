@@ -51,12 +51,14 @@ for ARCH in "amd64" "arm64"; do
 
         to_keep_current=$(echo "$versions" | grep "^$current_major" | head -n $KEEP_CURRENT_MAJOR || true)
         to_keep_previous=$(echo "$versions" | grep "^$previous_major" | head -n $KEEP_PREVIOUS_MAJOR || true)
-        to_keep=$(echo -e "${to_keep_current}\n${to_keep_previous}" | sed '/^\s*$/d' | sort | uniq)
-        to_delete=$(comm -23 <(echo "$versions" | sort) <(echo "$to_keep" | sort))
+        to_keep=$(echo -e "${to_keep_current}\n${to_keep_previous}" | sed '/^\s*$/d' | sort -rV | uniq)
+        to_delete=$(comm -23 <(echo "$versions" | sort -rV) <(echo "$to_keep" | sort -rV))
 
         for v in $to_keep; do
             echo "[ADD] Adding old deb files to repo for $v"
-            find "$REPO_DIR" -name "*${v}*${ARCH}.deb" -exec aptly -config="$APTLY_CONFIG" repo add "$REPO_NAME"  {} +
+
+            find "$REPO_DIR/pool" -name "*${v}*${ARCH}.deb"
+            find "$REPO_DIR/pool" -name "*${v}*${ARCH}.deb" -exec aptly -config="$APTLY_CONFIG" repo add "$REPO_NAME"  {} + || true
         done
     fi
 
