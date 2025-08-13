@@ -27,6 +27,11 @@ cat > "$APTLY_CONFIG" <<EOF
 EOF
 #trap 'rm -f -- "$APTLY_CONFIG"' EXIT
 
+# restore repo metadata from ghpages
+mkdir -p "$REPO_DIR/metadata" # in case it doesn't exist, the next command should not error out.
+mv "$REPO_DIR/metadata/*" "$(pwd)/.aptly/"
+
+
 # Check if repo exists, create if not
 if ! aptly -config="$APTLY_CONFIG" repo show "$REPO_NAME" > /dev/null 2>&1; then
     aptly -config="$APTLY_CONFIG" repo create -distribution="$DISTRIBUTION" -component="$COMPONENT" "$REPO_NAME"
@@ -78,7 +83,10 @@ aptly -config="$APTLY_CONFIG" publish repo -batch -force-overwrite -component="$
 
 
 mkdir -p "$REPO_DIR"
-cp -a .aptly/public/. "$REPO_DIR"
+cp -a ".aptly/public/." "$REPO_DIR"
+
+# save repo metadata into the gh_pages, for use next time.
+mv  ".aptly/*" "$REPO_DIR/metadata/"
 
 gpg --armor --export "$GPG_KEY_ID" > "$REPO_DIR/public.key"
 echo "[OK] Debian repository updated successfully."
