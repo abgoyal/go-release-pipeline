@@ -36,14 +36,14 @@ fi
 echo "[CLEANUP] Cleaning up old packages from Aptly repository..."
 all_packages=$(aptly -config="$APTLY_CONFIG" repo show -with-packages "$REPO_NAME" 2>/dev/null | sed -n '/^Packages:/,$p' | sed '1d; s/^[[:blank:]]*//' || echo "")
 if [ -n "$all_packages" ]; then
-    current_major=$(echo "$NEW_VERSION" | cut -d. -f1)
-    previous_major_num=$((${current_major#v} - 1))
-    previous_major="v${previous_major_num}"
+    current_major=$(echo "${NEW_VERSION#v}" | cut -d. -f1)
+    previous_major_num=$((${current_major} - 1))
+    previous_major="${previous_major_num}"
 
     versions=$(echo "$all_packages" | sort -rV | uniq)
 
-    to_keep_current=$(echo "$versions" | grep "^${current_major#v}" | head -n $KEEP_CURRENT_MAJOR)
-    to_keep_previous=$(echo "$versions" | grep "^${previous_major#v}" | head -n $KEEP_PREVIOUS_MAJOR)
+    to_keep_current=$(echo "$versions" | grep "^${current_major}" | head -n $KEEP_CURRENT_MAJOR || true)
+    to_keep_previous=$(echo "$versions" | grep "^${previous_major}" | head -n $KEEP_PREVIOUS_MAJOR || true)
     to_keep_versions=$(echo -e "${to_keep_current}\n${to_keep_previous}" | sed '/^\s*$/d' | sort | uniq)
 
     packages_to_remove=""

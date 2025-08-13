@@ -39,12 +39,12 @@ for arch_mapping in "amd64:x86_64" "arm64:aarch64"; do
                grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | sort -rV | uniq || true)
 
     if [ -n "$versions" ]; then
-        current_major=$(echo "$NEW_VERSION" | cut -d. -f1)
-        previous_major_num=$((${current_major#v} - 1))
-        previous_major="v${previous_major_num}"
+        current_major=$(echo "${NEW_VERSION#v}" | cut -d. -f1)
+        previous_major_num=$((${current_major} - 1))
+        previous_major="${previous_major_num}"
 
-        to_keep_current=$(echo "$versions" | grep "^$current_major" | head -n $KEEP_CURRENT_MAJOR)
-        to_keep_previous=$(echo "$versions" | grep "^$previous_major" | head -n $KEEP_PREVIOUS_MAJOR)
+        to_keep_current=$(echo "$versions" | grep "^$current_major" | head -n $KEEP_CURRENT_MAJOR || true)
+        to_keep_previous=$(echo "$versions" | grep "^$previous_major" | head -n $KEEP_PREVIOUS_MAJOR || true)
         to_keep=$(echo -e "${to_keep_current}\n${to_keep_previous}" | sed '/^\s*$/d' | sort | uniq)
         to_delete=$(comm -23 <(echo "$versions" | sort) <(echo "$to_keep" | sort))
 
