@@ -37,8 +37,8 @@ for arch_mapping in "amd64:x86_64" "arm64:aarch64"; do
                grep -oP '[0-9]+\.[0-9]+\.[0-9]+' | sort -rV | uniq || true)
 
     if [ -n "$versions" ]; then
-        current_major=$(echo "$NEW_VERSION" | cut -d. -f1)
-        previous_major_num=$((${current_major#v} - 1))
+        current_major=$(echo "${NEW_VERSION#v}" | cut -d. -f1)
+        previous_major_num=$((${current_major} - 1))
         previous_major="${previous_major_num}"
 
         to_keep_current=$(echo "$versions" | grep "^$current_major" | head -n $KEEP_CURRENT_MAJOR)
