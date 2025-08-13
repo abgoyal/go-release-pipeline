@@ -19,7 +19,6 @@ command -v apk >/dev/null || { echo "[ERROR] apk not found"; exit 1; }
 mkdir -p "$HOME/.abuild"
 echo "${APK_PRIVATE_KEY}" > "$HOME/.abuild/${APK_KEY_NAME}.rsa"
 chmod 600 "$HOME/.abuild/${APK_KEY_NAME}.rsa"
-#echo "PACKAGER_PRIVKEY=\"$HOME/.abuild/${APK_KEY_NAME}.rsa\"" > "$HOME/.abuild/abuild.conf"
 
 mkdir -p /etc/apk/keys/
 openssl rsa -in "$HOME/.abuild/${APK_KEY_NAME}.rsa" -pubout > "/etc/apk/keys/${APK_KEY_NAME}.rsa.pub"
@@ -45,7 +44,7 @@ for arch_mapping in "amd64:x86_64" "arm64:aarch64"; do
 
         to_keep_current=$(echo "$versions" | grep "^$current_major" | head -n $KEEP_CURRENT_MAJOR || true)
         to_keep_previous=$(echo "$versions" | grep "^$previous_major" | head -n $KEEP_PREVIOUS_MAJOR || true)
-        to_keep=$(echo -e "${to_keep_current}\n${to_keep_previous}" | sed '/^\s*$/d' | sort | uniq)
+        to_keep=$(echo -e "${to_keep_current}\n${to_keep_previous}" | sed '/^\s*$/d' | sort -rV | uniq)
         to_delete=$(echo "$versions" | grep -vxFf <(echo "$to_keep"))
 
         for v in $to_delete; do
@@ -58,11 +57,6 @@ for arch_mapping in "amd64:x86_64" "arm64:aarch64"; do
     # --- ADD & SIGN NEW PACKAGES ---
     for signed_apk in $(find "$ARTIFACTS_DIR" -name "*${GORELEASER_ARCH}*.apk" 2>/dev/null); do
         echo "[PROCESS] Processing new package: $(basename "$signed_apk")"
-        #temp_dir=$(mktemp -d)
-        #tar -xzf "$unsigned_apk" -C "$temp_dir"
-        #sed -i '/^datahash =/d' "$temp_dir/.PKGINFO"
-
-        #rebuilt_apk_path="$PWD/$ARCH_DIR/$(basename "$unsigned_apk")"
 
         original_filename=$(basename "$signed_apk")
         # Assumes filename format is <name>_<version>_<os>_<arch>.apk
@@ -76,12 +70,6 @@ for arch_mapping in "amd64:x86_64" "arm64:aarch64"; do
         # Use the new, standard name for the final path.
         rebuilt_apk_path="$PWD/$ARCH_DIR/${standard_apk_name}"
         mv "$signed_apk" "$rebuilt_apk_path"
-        #(cd "$temp_dir" && tar -czf "$rebuilt_apk_path" .PKGINFO usr)
-
-        #rm -rf "$temp_dir"
-
-        #echo "[SIGN] Signing $(basename "$rebuilt_apk_path")"
-        #abuild-sign "$rebuilt_apk_path"
     done
 
     # --- REGENERATE METADATA ---
