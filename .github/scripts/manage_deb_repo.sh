@@ -5,7 +5,7 @@ echo "--- Managing Debian (APT) Repository using Aptly ---"
 
 # --- CONFIGURATION ---
 REPO_DIR="gh-pages/deb"
-APTLY_HOME="$REPO_DIR/aptly_metadata"
+APTLY_HOME="$HOME/aptly_metadata"
 ARTIFACTS_DIR="artifacts"
 COMPONENT="main"
 DISTRIBUTION="."
@@ -30,51 +30,48 @@ EOF
 #trap 'rm -f -- "$APTLY_CONFIG"' EXIT
 
 # Check if repo exists, create if not
-if ! aptly -config="$APTLY_CONFIG" repo show "$REPO_NAME" > /dev/null 2>&1; then
+#if ! aptly -config="$APTLY_CONFIG" repo show "$REPO_NAME" > /dev/null 2>&1; then
     aptly -config="$APTLY_CONFIG" repo create -distribution="$DISTRIBUTION" -component="$COMPONENT" "$REPO_NAME"
-fi
+#fi
 
-# --- CLEANUP OLD PACKAGES ---
-echo "[CLEANUP] Cleaning up old packages from Aptly repository..."
-all_packages=$(aptly -config="$APTLY_CONFIG" repo show -with-packages "$REPO_NAME" 2>/dev/null | sed -n '/^Packages:/,$p' | sed '1d; s/^[[:blank:]]*//' || echo "")
-if [ -n "$all_packages" ]; then
-    current_major=$(echo "${NEW_VERSION#v}" | cut -d. -f1)
-    previous_major_num=$((${current_major} - 1))
-    previous_major="${previous_major_num}"
 
-    versions=$(echo "$all_packages" | sort -rV | uniq)
+# --- PROCESS EACH ARCHITECTURE ---
+for ARCH in "amd64" "arm64"; do
+    echo "--- Processing architecture: $ARCH ---"
 
-    to_keep_current=$(echo "$versions" | grep "^${current_major}" | head -n $KEEP_CURRENT_MAJOR || true)
-    to_keep_previous=$(echo "$versions" | grep "^${previous_major}" | head -n $KEEP_PREVIOUS_MAJOR || true)
-    to_keep_versions=$(echo -e "${to_keep_current}\n${to_keep_previous}" | sed '/^\s*$/d' | sort | uniq)
+    # --- CLEANUP OLD PACKAGES ---
+    echo "[CLEANUP] Cleaning up old packages in $REPO_DIR..."
+    versions=$(find "$REPO_DIR/pool" -name "*${ARCH}*.deb" -exec basename {} \; | \
+               grep -oP '[0-9]+\.[0-9]+\.[0-9]+' | sort -rV | uniq || true)
 
-    packages_to_remove=""
-    for v in $(echo "$versions"); do
-        if ! echo "$to_keep_versions" | grep -q "^$v$"; then
-            echo "[CLEANUP] Marking version $v for removal."
-            packages_to_remove+=$(echo "$all_packages" | grep "_${v}_" | awk '{print " "$1}' || true)
-        fi
-    done
+    if [ -n "$versions" ]; then
+        current_major=$(echo "${NEW_VERSION#v}" | cut -d. -f1)
+        previous_major_num=$((${current_major} - 1))
+        previous_major="${previous_major_num}"
 
-    if [ -n "$packages_to_remove" ]; then
-        # shellcheck disable=SC2086
-        aptly -config="$APTLY_CONFIG" repo remove "$REPO_NAME" $packages_to_remove
+        to_keep_current=$(echo "$versions" | grep "^$current_major" | head -n $KEEP_CURRENT_MAJOR || true)
+        to_keep_previous=$(echo "$versions" | grep "^$previous_major" | head -n $KEEP_PREVIOUS_MAJOR || true)
+        to_keep=$(echo -e "${to_keep_current}\n${to_keep_previous}" | sed '/^\s*$/d' | sort | uniq)
+        to_delete=$(comm -23 <(echo "$versions" | sort) <(echo "$to_keep" | sort))
+
+        for v in $to_keep; do
+            echo "[ADD] Adding old deb files to repo for $v"
+            find "$REPO_DIR" -name "*${v}*${ARCH}.deb" -exec aptly -config="$APTLY_CONFIG" repo add "$REPO_NAME"  {} +
+        done
     fi
-else
-    echo "[INFO] Aptly repository is new or empty. No cleanup needed."
-fi
 
-# --- ADD NEW PACKAGES ---
-echo "[ADD] Adding new packages to Aptly repository..."
-DEB_FILES=$(find "$ARTIFACTS_DIR" -name "*.deb")
-if [ -z "$DEB_FILES" ]; then
-    echo "[INFO] No .deb files found in artifacts. Skipping."
-    exit 0
-fi
-aptly -config="$APTLY_CONFIG" repo add "$REPO_NAME" $DEB_FILES
+    # --- ADD NEW PACKAGES ---
+    echo "[ADD] Adding new packages to Aptly repository..."
+    DEB_FILES=$(find "$ARTIFACTS_DIR" -name "*${ARCH}*.deb")
+    if [ -z "$DEB_FILES" ]; then
+      echo "[INFO] No .deb files found in artifacts. Skipping."
+      exit 0
+    fi
+    aptly -config="$APTLY_CONFIG" repo add "$REPO_NAME" $DEB_FILES
+
+done
 
 # --- PUBLISH REPO ---
-
 echo "[PUBLISH] Publishing Debian repository..."
 aptly -config="$APTLY_CONFIG" publish snapshot -batch -force-overwrite -component="$COMPONENT" -distribution="$DISTRIBUTION" \
     -gpg-key="$GPG_KEY_ID" -passphrase="$GPG_PASSPHRASE" "$REPO_NAME" .
