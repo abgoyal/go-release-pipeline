@@ -49,7 +49,7 @@ for arch_mapping in "amd64:x86_64" "arm64:aarch64"; do
 
         for v in $to_delete; do
             echo "[CLEANUP] Removing files for version $v"
-            find "$ARCH_DIR" -name "*${v}*${ALPINE_ARCH}.apk" -exec rm -v {} +
+            find "$ARCH_DIR" -name "*${v}.apk" -exec rm -v {} +
         done
     fi
 
