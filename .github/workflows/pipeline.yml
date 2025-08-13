@@ -261,7 +261,7 @@ jobs:
 
 
   test-packages:
-    runs-on: ${{ matrix.arch == 'arm64' && 'ubuntu-24.04-arm64' || 'ubuntu-latest' }}
+    runs-on: ${{ matrix.arch == 'arm64' && 'ubuntu-24.04-arm' || 'ubuntu-latest' }}
     needs: [goreleaser, update-repo]
     if: always() && !inputs.dry-run && (inputs.enable-deb || inputs.enable-rpm || inputs.enable-apk)
     #if: false
