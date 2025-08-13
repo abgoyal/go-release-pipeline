@@ -16,6 +16,10 @@ on:
         type: boolean
         required: false
         default: false
+      tests:
+        type: boolean
+        required: false
+        default: true
       enable-deb:
         type: boolean
         required: false
@@ -256,8 +260,7 @@ jobs:
   test-packages:
     runs-on: ${{ matrix.arch == 'arm64' && 'ubuntu-24.04-arm' || 'ubuntu-latest' }}
     needs: [goreleaser, update-repo]
-    if: always() && !inputs.dry-run && (inputs.enable-deb || inputs.enable-rpm || inputs.enable-apk)
-    #if: false
+    if: always() && inputs.tests && !inputs.dry-run && (inputs.enable-deb || inputs.enable-rpm || inputs.enable-apk)
     strategy:
       fail-fast: false
       matrix:
