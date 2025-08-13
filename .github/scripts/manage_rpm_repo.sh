@@ -39,7 +39,7 @@ for arch_mapping in "amd64:x86_64" "arm64:aarch64"; do
     if [ -n "$versions" ]; then
         current_major=$(echo "$NEW_VERSION" | cut -d. -f1)
         previous_major_num=$((${current_major#v} - 1))
-        previous_major="v${previous_major_num}"
+        previous_major="${previous_major_num}"
 
         to_keep_current=$(echo "$versions" | grep "^$current_major" | head -n $KEEP_CURRENT_MAJOR)
         to_keep_previous=$(echo "$versions" | grep "^$previous_major" | head -n $KEEP_PREVIOUS_MAJOR)
