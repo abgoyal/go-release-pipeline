@@ -37,11 +37,7 @@ on:
     secrets:
       DEB_GPG_PRIVATE_KEY:
         required: false
-      DEB_GPG_PASSPHRASE:
-        required: false
       RPM_GPG_PRIVATE_KEY:
-        required: false
-      RPM_GPG_PASSPHRASE:
         required: false
       APK_PRIVATE_KEY:
         required: false
@@ -108,16 +104,6 @@ jobs:
           path: ~/.cache/go-build
           key: ${{ runner.os }}-go-build-cache-${{ hashFiles('**/go.sum') }}
 
-      - name: Import GPG Keys
-        uses: crazy-max/ghaction-import-gpg@v6
-        with:
-          gpg_private_key: |
-            ${{ inputs.enable-deb && secrets.DEB_GPG_PRIVATE_KEY || '' }}
-            ${{ inputs.enable-rpm && secrets.RPM_GPG_PRIVATE_KEY || '' }}
-          passphrase: |
-            ${{ inputs.enable-deb && secrets.DEB_GPG_PASSPHRASE || '' }}
-            ${{ inputs.enable-rpm && secrets.RPM_GPG_PASSPHRASE || '' }}
-
       - name: Import APK signing key
         if: inputs.enable-apk
         run: |
@@ -143,8 +129,6 @@ jobs:
           args: release --clean ${{ inputs.dry-run && '--snapshot' || '' }} --config ${{ inputs.goreleaser-config-path }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          DEB_GPG_PASSPHRASE: ${{ secrets.DEB_GPG_PASSPHRASE }}
-          RPM_GPG_PASSPHRASE: ${{ secrets.RPM_GPG_PASSPHRASE }}
           DEB_POSTINSTALL_PATH: ${{ inputs.deb-postinstall-path }}
           RPM_POSTINSTALL_PATH: ${{ inputs.rpm-postinstall-path }}
           RPM_KEY_FILE: /tmp/rpm_signing_key
@@ -276,9 +260,8 @@ jobs:
           exit 1
 
 
-
   test-packages:
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.arch == 'arm64' && 'ubuntu-24.04-arm64' || 'ubuntu-latest' }}
     needs: [goreleaser, update-repo]
     if: always() && !inputs.dry-run && (inputs.enable-deb || inputs.enable-rpm || inputs.enable-apk)
     #if: false
@@ -289,8 +272,7 @@ jobs:
           - { type: 'deb', distro: 'ubuntu' }
           - { type: 'rpm', distro: 'fedora' }
           - { type: 'apk', distro: 'alpine' }
-        #arch: [amd64, arm64]
-        arch: [amd64]
+        arch: [amd64, arm64]
     steps:
       - name: Checkout Pipeline Repo for Test Action
         if: >
@@ -300,12 +282,6 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: ${{ inputs.releaser-repo }}
-      - name: Set up QEMU
-        if: >
-          (matrix.package_info.type == 'deb' && inputs.enable-deb) ||
-          (matrix.package_info.type == 'rpm' && inputs.enable-rpm) ||
-          (matrix.package_info.type == 'apk' && inputs.enable-apk)
-        uses: docker/setup-qemu-action@v3
       - name: Test package on ${{ matrix.package_info.distro }} (${{ matrix.arch }})
         if: >
           (matrix.package_info.type == 'deb' && inputs.enable-deb) ||
