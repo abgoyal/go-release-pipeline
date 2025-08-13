@@ -45,7 +45,7 @@ for arch_mapping in "amd64:x86_64" "arm64:aarch64"; do
         to_keep_current=$(echo "$versions" | grep "^$current_major" | head -n $KEEP_CURRENT_MAJOR || true)
         to_keep_previous=$(echo "$versions" | grep "^$previous_major" | head -n $KEEP_PREVIOUS_MAJOR || true)
         to_keep=$(echo -e "${to_keep_current}\n${to_keep_previous}" | sed '/^\s*$/d' | sort -rV | uniq)
-        to_delete=$(echo "$versions" | grep -vxFf <(echo "$to_keep"))
+        to_delete=$(echo "$versions" | grep -vxFf <(echo "$to_keep") || true)
 
         for v in $to_delete; do
             echo "[CLEANUP] Removing files for version $v"
