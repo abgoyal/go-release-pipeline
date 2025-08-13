@@ -5,6 +5,7 @@ echo "--- Managing Debian (APT) Repository using Aptly ---"
 
 # --- CONFIGURATION ---
 REPO_DIR="gh-pages/deb"
+APTLY_HOME="$REPO_DIR/aptly_metadata"
 ARTIFACTS_DIR="artifacts"
 COMPONENT="main"
 DISTRIBUTION="."
@@ -22,17 +23,11 @@ GPG_KEY_ID=$(gpg --list-secret-keys --keyid-format long | grep 'sec ' | awk '{pr
 
 # --- APTLY SETUP ---
 APTLY_CONFIG=$(mktemp)
+mkdir -p "$APTLY_HOME"
 cat > "$APTLY_CONFIG" <<EOF
-{ "rootDir": "$(pwd)/.aptly", "architectures": ["amd64", "arm64"] }
+{ "rootDir": "$APTLY_HOME", "architectures": ["amd64", "arm64"] }
 EOF
 #trap 'rm -f -- "$APTLY_CONFIG"' EXIT
-
-
-# restore repo metadata from ghpages
-shopt -s nullglob
-mkdir -p "$REPO_DIR/metadata" # in case it doesn't exist, the next command should not error out.
-mv "$REPO_DIR/metadata/{*,.[^.]*}" "$(pwd)/.aptly/" || true
-
 
 # Check if repo exists, create if not
 if ! aptly -config="$APTLY_CONFIG" repo show "$REPO_NAME" > /dev/null 2>&1; then
@@ -85,10 +80,8 @@ aptly -config="$APTLY_CONFIG" publish repo -batch -force-overwrite -component="$
 
 
 mkdir -p "$REPO_DIR"
-cp -a ".aptly/public/." "$REPO_DIR"
-
-# save repo metadata into the gh_pages, for use next time.
-mv  ".aptly/{*,.[^.]*}" "$REPO_DIR/metadata/"
+# copy the generated repo static assets to repo root
+cp -a "$APTLY_HOME/public/." "$REPO_DIR"
 
 gpg --armor --export "$GPG_KEY_ID" > "$REPO_DIR/public.key"
 echo "[OK] Debian repository updated successfully."
